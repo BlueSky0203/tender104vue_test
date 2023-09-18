@@ -1,0 +1,14 @@
+substitutions:
+  _ENV: prod
+  _PACKAGE_NAME: vue-project
+  _PACKAGE_VERSION: v999
+
+steps:
+# - name: 'ubuntu'
+#   args: ['echo', '${_ENV}, ${_PACKAGE_NAME}, ${_PACKAGE_VERSION}']
+
+- name: "gcr.io/cloud-builders/docker"
+  args: ['build', '--tag', 'asia.gcr.io/${PROJECT_ID}/${_PACKAGE_NAME}:${_PACKAGE_VERSION}', '--build-arg', 'ENV_NAME=${_ENV}', '.']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'asia.gcr.io/${PROJECT_ID}/${_PACKAGE_NAME}:${_PACKAGE_VERSION}']
