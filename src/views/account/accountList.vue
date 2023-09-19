@@ -7,7 +7,7 @@
 					<div class="el-input-group__prepend">
 						<span>帳號</span>
 					</div>
-					<el-input type="text" v-model="listQuery.username"></el-input>
+					<el-input type="text" v-model="listQuery.userName"></el-input>
 				</div>
 			</span>
 			<el-button class="filter-item" type="primary" icon="el-icon-search" @click="getList()">搜尋</el-button>
@@ -135,7 +135,7 @@ export default {
 			total: 0,
 			list: [],
 			listQuery:{
-				username:'',
+				userName:'',
 				pageCurrent: 1,
 				pageSize: 50,
 			},
@@ -211,7 +211,7 @@ export default {
 			this.loading = true;
 			this.list = [];
 			let query = {
-				userName:this.listQuery.username,
+				userName:this.listQuery.userName,
 				pageCurrent: this.listQuery.pageCurrent,
 				pageSize: this.listQuery.pageSize,
 			};
