@@ -62,7 +62,7 @@ export default {
   components: { PanThumb },
   data() {
     return {
-      name: localStorage.username,
+      name: localStorage.userName,
       // emptyGif: 'https://wpimg.wallstcn.com/0e03b7da-db9e-4819-ba10-9016ddfdaed3',
       emptyGif: "/assets/gif/report.gif",
       headers: {
@@ -82,16 +82,16 @@ export default {
     ]),
   },
   mounted() {
-    this.getLoginList();
+    this.getList();
   },
   methods: {
     formatTime(time) {
       return moment(time).add(8, 'hour').format("YYYY-MM-DD") + "\n" + moment(time).add(8, 'hour').format("HH:mm:ss");
     },
-    getLoginList() {
+    getList() {
       getLoginLog()
         .then((response) => { 
-          this.loginList = response.data; 
+          this.loginList = response.data.loginLogs; 
           this.loginList.forEach(l => {
             l.LoginTime = this.formatTime(l.LoginTime);
           })

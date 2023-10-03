@@ -23,6 +23,7 @@ import PIReportRouter from './modules/PIReport';
 import otherRouter from './modules/other';
 import carRouter from './modules/car';
 import priceRouter from './modules/price';
+import personInfo from './modules/personInfo'
 
 /**
  * Note: sub-menu only appear when route children.length >= 1
@@ -121,6 +122,7 @@ export const asyncRoutes = [
 	expAnalysisRouter,
 	otherRouter,
 	carRouter,
+  personInfo,
   // 404 page must be placed at the end !!!
   { path: '*', redirect: '/404', hidden: true }
 ]
