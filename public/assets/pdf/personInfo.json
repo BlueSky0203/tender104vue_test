@@ -4,20 +4,20 @@
       "photo": {
         "type": "image",
         "position": {
-          "x": 145.9,
-          "y": 39.16
+          "x": 145.12,
+          "y": 38.63
         },
-        "width": 33.4,
-        "height": 24.71
+        "width": 34.71,
+        "height": 25.76
       },
       "department": {
         "type": "text",
         "position": {
-          "x": 28.31,
-          "y": 70.39
+          "x": 26.46,
+          "y": 69.62
         },
-        "width": 36.24,
-        "height": 4.53,
+        "width": 39.4,
+        "height": 6.36,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -26,11 +26,11 @@
       "position": {
         "type": "text",
         "position": {
-          "x": 79.59,
-          "y": 70.34
+          "x": 74.3,
+          "y": 69.54
         },
-        "width": 36.24,
-        "height": 5.05,
+        "width": 44.43,
+        "height": 6.36,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -39,11 +39,11 @@
       "name": {
         "type": "text",
         "position": {
-          "x": 39.05,
-          "y": 84.04
+          "x": 38.27,
+          "y": 83.52
         },
-        "width": 26.44,
-        "height": 3.99,
+        "width": 28,
+        "height": 5.29,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -52,11 +52,11 @@
       "sex": {
         "type": "text",
         "position": {
-          "x": 78.17,
-          "y": 84.25
+          "x": 77.11,
+          "y": 83.73
         },
-        "width": 18.22,
-        "height": 3.46,
+        "width": 20.07,
+        "height": 5.3,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -65,12 +65,12 @@
       "birthDate": {
         "type": "text",
         "position": {
-          "x": 120.18,
-          "y": 83.93
+          "x": 119.39,
+          "y": 83.94
         },
-        "width": 22.72,
-        "height": 4.27,
-        "fontSize": 10,
+        "width": 25.09,
+        "height": 5.31,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
@@ -78,11 +78,11 @@
       "age": {
         "type": "text",
         "position": {
-          "x": 168.04,
-          "y": 83.96
+          "x": 162.74,
+          "y": 83.7
         },
-        "width": 7.67,
-        "height": 4.53,
+        "width": 17.45,
+        "height": 5.31,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -91,50 +91,50 @@
       "id": {
         "type": "text",
         "position": {
-          "x": 39.79,
-          "y": 90.87
+          "x": 38.47,
+          "y": 90.08
         },
-        "width": 56.34,
-        "height": 3.72,
+        "width": 58.71,
+        "height": 5.3,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
       },
-      "unmarried": {
+      "check_unmarried": {
         "type": "text",
         "position": {
-          "x": 119.56,
-          "y": 89.99
+          "x": 121.7,
+          "y": 90.81
         },
-        "width": 6.61,
-        "height": 5.32,
-        "fontSize": 12,
+        "width": 2.59,
+        "height": 2.36,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
-      "married": {
+      "check_married": {
         "type": "text",
         "position": {
-          "x": 146.49,
-          "y": 89.93
+          "x": 148.36,
+          "y": 90.81
         },
-        "width": 6.88,
-        "height": 5.32,
-        "fontSize": 12,
+        "width": 3.35,
+        "height": 2.32,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
       "homePhone": {
         "type": "text",
         "position": {
-          "x": 54.84,
-          "y": 97.17
+          "x": 52.99,
+          "y": 96.38
         },
-        "width": 41.24,
-        "height": 4.27,
+        "width": 44.15,
+        "height": 5.85,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -143,11 +143,11 @@
       "phone": {
         "type": "text",
         "position": {
-          "x": 54.78,
-          "y": 103.47
+          "x": 52.93,
+          "y": 102.94
         },
-        "width": 41.23,
-        "height": 4.25,
+        "width": 44.14,
+        "height": 5.56,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -156,11 +156,11 @@
       "height": {
         "type": "text",
         "position": {
-          "x": 122.21,
-          "y": 97.05
+          "x": 119.3,
+          "y": 96.26
         },
-        "width": 19.01,
-        "height": 3.99,
+        "width": 25.09,
+        "height": 5.56,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -169,11 +169,11 @@
       "weight": {
         "type": "text",
         "position": {
-          "x": 165.27,
-          "y": 96.74
+          "x": 162.62,
+          "y": 96.21
         },
-        "width": 12.13,
-        "height": 4.52,
+        "width": 17.69,
+        "height": 5.57,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -182,11 +182,11 @@
       "mail": {
         "type": "text",
         "position": {
-          "x": 120.61,
-          "y": 103.41
+          "x": 119.02,
+          "y": 102.62
         },
-        "width": 57.63,
-        "height": 4.26,
+        "width": 61.06,
+        "height": 5.84,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -195,11 +195,11 @@
       "address1": {
         "type": "text",
         "position": {
-          "x": 40.91,
-          "y": 109.97
+          "x": 38.27,
+          "y": 109.18
         },
-        "width": 137.81,
-        "height": 4.53,
+        "width": 142.03,
+        "height": 5.57,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -208,63 +208,63 @@
       "address2": {
         "type": "text",
         "position": {
-          "x": 41.13,
-          "y": 116.53
+          "x": 38.49,
+          "y": 115.48
         },
-        "width": 137.54,
-        "height": 4.26,
+        "width": 141.77,
+        "height": 5.83,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
       },
-      "familyName": {
+      "emergencyContactName": {
         "type": "text",
         "position": {
-          "x": 54.61,
-          "y": 123.14
+          "x": 53.03,
+          "y": 122.34
         },
-        "width": 20.34,
-        "height": 4.25,
+        "width": 23.76,
+        "height": 5.58,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
       },
-      "familyRelationship": {
+      "emergencyContactRelationship": {
         "type": "text",
         "position": {
-          "x": 98.48,
-          "y": 122.56
+          "x": 97.44,
+          "y": 121.88
         },
-        "width": 19.26,
-        "height": 4.77,
+        "width": 21.35,
+        "height": 5.82,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
       },
-      "familyPhone": {
+      "emergencyContactPhone": {
         "type": "text",
         "position": {
-          "x": 138.91,
-          "y": 122.78
+          "x": 136.53,
+          "y": 122.26
         },
-        "width": 40.18,
-        "height": 4.79,
+        "width": 43.34,
+        "height": 5.31,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
       },
-      "familyAddress": {
+      "emergencyContactAddress": {
         "type": "text",
         "position": {
-          "x": 55.37,
-          "y": 129.45
+          "x": 53.01,
+          "y": 128.4
         },
-        "width": 123.49,
-        "height": 4.24,
+        "width": 127.17,
+        "height": 5.82,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -273,11 +273,11 @@
       "school": {
         "type": "text",
         "position": {
-          "x": 41.02,
-          "y": 148.96
+          "x": 38.64,
+          "y": 148.17
         },
-        "width": 33.81,
-        "height": 4.24,
+        "width": 37.77,
+        "height": 5.56,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -286,11 +286,11 @@
       "major": {
         "type": "text",
         "position": {
-          "x": 79.58,
-          "y": 148.64
+          "x": 77.22,
+          "y": 147.86
         },
-        "width": 15.55,
-        "height": 4.51,
+        "width": 20.02,
+        "height": 5.55,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -299,11 +299,11 @@
       "companyName1": {
         "type": "text",
         "position": {
-          "x": 40.71,
-          "y": 161.88
+          "x": 38.6,
+          "y": 161.36
         },
-        "width": 32.75,
-        "height": 5.31,
+        "width": 37.76,
+        "height": 6.09,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -312,50 +312,50 @@
       "companyName2": {
         "type": "text",
         "position": {
-          "x": 40.92,
-          "y": 169.49
+          "x": 38.28,
+          "y": 168.96
         },
-        "width": 33.01,
-        "height": 5.57,
+        "width": 38.56,
+        "height": 7.16,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
       },
-      "graduated": {
+      "check_graduated": {
         "type": "text",
         "position": {
-          "x": 144.91,
-          "y": 147.59
+          "x": 146.54,
+          "y": 148.96
         },
-        "width": 5.55,
-        "height": 4.8,
-        "fontSize": 12,
+        "width": 2.89,
+        "height": 2.35,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
-      "ungraduated": {
+      "check_ungraduated": {
         "type": "text",
         "position": {
-          "x": 163.11,
-          "y": 147.27
+          "x": 164.19,
+          "y": 148.71
         },
-        "width": 4.76,
-        "height": 4.25,
-        "fontSize": 12,
+        "width": 3.14,
+        "height": 2.35,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
       "reason1": {
         "type": "text",
         "position": {
-          "x": 148.01,
-          "y": 162.04
+          "x": 144.84,
+          "y": 161.26
         },
-        "width": 29.84,
-        "height": 4.77,
+        "width": 35.39,
+        "height": 6.61,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -364,167 +364,167 @@
       "reason2": {
         "type": "text",
         "position": {
-          "x": 147.96,
-          "y": 170.18
+          "x": 145.05,
+          "y": 169
         },
-        "width": 29.83,
-        "height": 4.78,
+        "width": 35.12,
+        "height": 7.41,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
       },
-      "word": {
+      "check_word": {
         "type": "text",
         "position": {
-          "x": 41.99,
-          "y": 183.05
+          "x": 43.35,
+          "y": 184.4
         },
-        "width": 6.06,
-        "height": 5.32,
-        "fontSize": 12,
+        "width": 3.9,
+        "height": 3.18,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
-      "excel": {
+      "check_excel": {
         "type": "text",
         "position": {
-          "x": 70.25,
-          "y": 183.25
+          "x": 71.35,
+          "y": 184.66
         },
-        "width": 5.82,
-        "height": 4.8,
-        "fontSize": 12,
+        "width": 3.91,
+        "height": 2.64,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
-      "powerPoint": {
+      "check_powerPoint": {
         "type": "text",
         "position": {
-          "x": 97.18,
-          "y": 183.73
+          "x": 98.27,
+          "y": 184.82
         },
-        "width": 5.02,
-        "height": 4.8,
-        "fontSize": 12,
+        "width": 3.39,
+        "height": 2.41,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
-      "other": {
+      "check_otherSkill": {
         "type": "text",
         "position": {
-          "x": 119.08,
-          "y": 183.94
+          "x": 120.26,
+          "y": 185.03
         },
-        "width": 5.28,
-        "height": 4.26,
-        "fontSize": 12,
+        "width": 3.66,
+        "height": 3.12,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
       "skill": {
         "type": "text",
         "position": {
-          "x": 133.31,
-          "y": 184.42
+          "x": 132.78,
+          "y": 184.17
         },
-        "width": 33.33,
-        "height": 4.27,
+        "width": 36.24,
+        "height": 5.05,
         "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
       },
-      "motor": {
+      "check_motor": {
         "type": "text",
         "position": {
-          "x": 41.67,
-          "y": 189.62
+          "x": 43.4,
+          "y": 191
         },
-        "width": 6.34,
-        "height": 4.79,
-        "fontSize": 12,
+        "width": 3.37,
+        "height": 2.62,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
-      "car": {
+      "check_car": {
         "type": "text",
         "position": {
-          "x": 70.44,
-          "y": 189.83
+          "x": 71.52,
+          "y": 190.91
         },
-        "width": 5.28,
-        "height": 4.8,
-        "fontSize": 12,
+        "width": 3.66,
+        "height": 2.91,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
-      "taxi": {
+      "check_taxi": {
         "type": "text",
         "position": {
-          "x": 97.1,
-          "y": 189.51
+          "x": 98.18,
+          "y": 190.5
         },
-        "width": 5.02,
-        "height": 5.32,
-        "fontSize": 12,
+        "width": 3.39,
+        "height": 2.63,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
-      "truck": {
+      "check_truck": {
         "type": "text",
         "position": {
-          "x": 119.03,
-          "y": 189.46
+          "x": 120.11,
+          "y": 190.5
         },
-        "width": 5.29,
-        "height": 4.53,
-        "fontSize": 12,
+        "width": 3.66,
+        "height": 2.91,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
-      "other1": {
+      "check_otherDriverLicense": {
         "type": "text",
         "position": {
-          "x": 144.64,
-          "y": 189.4
+          "x": 145.46,
+          "y": 190.25
         },
-        "width": 4.76,
-        "height": 4.53,
-        "fontSize": 12,
+        "width": 3.89,
+        "height": 2.87,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
-        "lineHeight": 1
+        "lineHeight": 0
       },
       "driverLicense": {
         "type": "text",
         "position": {
-          "x": 156.02,
-          "y": 190.71
+          "x": 155.76,
+          "y": 190.45
         },
-        "width": 22.21,
-        "height": 4,
+        "width": 24.32,
+        "height": 5.05,
         "fontSize": 8,
         "alignment": "center",
-        "verticalAlignment": "bottom",
+        "verticalAlignment": "middle",
         "lineHeight": 1
       },
       "license1": {
         "type": "text",
         "position": {
-          "x": 40.11,
-          "y": 203.64
+          "x": 38.53,
+          "y": 202.58
         },
-        "width": 54.18,
-        "height": 4.23,
+        "width": 58.66,
+        "height": 5.55,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -533,11 +533,11 @@
       "license2": {
         "type": "text",
         "position": {
-          "x": 40.32,
-          "y": 210.2
+          "x": 38.74,
+          "y": 209.14
         },
-        "width": 53.91,
-        "height": 4.23,
+        "width": 58.4,
+        "height": 6.08,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -546,11 +546,11 @@
       "license3": {
         "type": "text",
         "position": {
-          "x": 40.28,
-          "y": 216.76
+          "x": 38.96,
+          "y": 215.7
         },
-        "width": 53.65,
-        "height": 3.97,
+        "width": 57.88,
+        "height": 5.82,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -559,11 +559,11 @@
       "institution1": {
         "type": "text",
         "position": {
-          "x": 99.49,
-          "y": 203.46
+          "x": 97.37,
+          "y": 202.67
         },
-        "width": 42.26,
-        "height": 4.51,
+        "width": 47.03,
+        "height": 5.82,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -572,25 +572,25 @@
       "startDate": {
         "type": "text",
         "position": {
-          "x": 135.89,
-          "y": 70.29
+          "x": 134.31,
+          "y": 69.7
         },
-        "width": 42.85,
-        "height": 4.79,
+        "width": 46.02,
+        "height": 6.61,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
       },
-      "studyingYear": {
+      "academicTerm": {
         "type": "text",
         "position": {
-          "x": 100.23,
-          "y": 148.91
+          "x": 97.32,
+          "y": 148.82
         },
-        "width": 40.94,
-        "height": 4.25,
-        "fontSize": 10,
+        "width": 47.02,
+        "height": 6.1,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
@@ -598,11 +598,11 @@
       "position1": {
         "type": "text",
         "position": {
-          "x": 78.21,
-          "y": 161.55
+          "x": 77.16,
+          "y": 161.02
         },
-        "width": 17.67,
-        "height": 5.31,
+        "width": 19.77,
+        "height": 6.88,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -611,38 +611,38 @@
       "position2": {
         "type": "text",
         "position": {
-          "x": 78.69,
-          "y": 169.97
+          "x": 77.11,
+          "y": 169.18
         },
-        "width": 17.14,
-        "height": 5.31,
+        "width": 20.04,
+        "height": 6.89,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
       },
-      "duringEmployment1": {
+      "employmentTerm1": {
         "type": "text",
         "position": {
-          "x": 101.78,
-          "y": 161.83
+          "x": 97.29,
+          "y": 162.04
         },
-        "width": 38.55,
-        "height": 5.04,
-        "fontSize": 10,
+        "width": 47,
+        "height": 6.61,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
       },
-      "duringEmployment2": {
+      "employmentTerm2": {
         "type": "text",
         "position": {
-          "x": 101.72,
-          "y": 170.24
+          "x": 97.75,
+          "y": 169.92
         },
-        "width": 38.3,
-        "height": 5.04,
-        "fontSize": 10,
+        "width": 46.5,
+        "height": 7.42,
+        "fontSize": 8,
         "alignment": "center",
         "verticalAlignment": "middle",
         "lineHeight": 1
@@ -650,11 +650,11 @@
       "issuedDate1": {
         "type": "text",
         "position": {
-          "x": 146.52,
-          "y": 203.68
+          "x": 144.41,
+          "y": 203.16
         },
-        "width": 32.46,
-        "height": 3.97,
+        "width": 35.89,
+        "height": 5.28,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -663,11 +663,11 @@
       "institution2": {
         "type": "text",
         "position": {
-          "x": 99.7,
-          "y": 210.03
+          "x": 97.59,
+          "y": 209.2
         },
-        "width": 42.26,
-        "height": 4.51,
+        "width": 47.01,
+        "height": 6.35,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -676,11 +676,11 @@
       "institution3": {
         "type": "text",
         "position": {
-          "x": 99.64,
-          "y": 216.33
+          "x": 97.8,
+          "y": 215.78
         },
-        "width": 42.26,
-        "height": 4.51,
+        "width": 46.48,
+        "height": 5.82,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -689,11 +689,11 @@
       "issuedDate2": {
         "type": "text",
         "position": {
-          "x": 146.47,
-          "y": 209.98
+          "x": 144.36,
+          "y": 209.2
         },
-        "width": 32.46,
-        "height": 4.24,
+        "width": 35.89,
+        "height": 6.09,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -702,11 +702,11 @@
       "issuedDate3": {
         "type": "text",
         "position": {
-          "x": 146.67,
-          "y": 216.54
+          "x": 144.82,
+          "y": 215.49
         },
-        "width": 32.46,
-        "height": 4.24,
+        "width": 35.63,
+        "height": 5.82,
         "fontSize": 10,
         "alignment": "center",
         "verticalAlignment": "middle",
@@ -725,8 +725,8 @@
       "birthDate": "出生年月日",
       "age": "年齡",
       "id": "身分證ID",
-      "unmarried": "v",
-      "married": "v",
+      "check_unmarried": " ",
+      "check_married": " ",
       "homePhone": "電話",
       "phone": "手機",
       "height": "身高",
@@ -734,39 +734,39 @@
       "mail": "信箱",
       "address1": "戶籍地址",
       "address2": "居住地址",
-      "familyName": "聯絡人姓名",
-      "familyRelationship": "聯絡人關係",
-      "familyPhone": "聯絡人電話\n",
-      "familyAddress": "聯絡人地址",
+      "emergencyContactName": "聯絡人姓名",
+      "emergencyContactRelationship": "聯絡人關係",
+      "emergencyContactPhone": "聯絡人電話\n",
+      "emergencyContactAddress": "聯絡人地址",
       "school": "學校名稱",
       "major": "科系\n",
       "companyName1": "公司名稱1",
       "companyName2": "公司名稱2",
-      "graduated": "v",
-      "ungraduated": "v",
+      "check_graduated": " ",
+      "check_ungraduated": " ",
       "reason1": "原因1",
       "reason2": "原因2",
-      "word": "v",
-      "excel": "v",
-      "powerPoint": "v",
-      "other": "v",
+      "check_word": " ",
+      "check_excel": " ",
+      "check_powerPoint": " ",
+      "check_otherSkill": " ",
       "skill": "技能",
-      "motor": "v",
-      "car": "v",
-      "taxi": "v",
-      "truck": "v",
-      "other1": "v",
+      "check_motor": " ",
+      "check_car": " ",
+      "check_taxi": " ",
+      "check_truck": " ",
+      "check_otherDriverLicense": " ",
       "driverLicense": "其他駕駛執照",
       "license1": "證照1",
       "license2": "證照2",
       "license3": "證照3",
       "institution1": "核發單位1",
       "startDate": "到職日期",
-      "studyingYear": "在學期間",
+      "academicTerm": "在學期間",
       "position1": "職位1",
       "position2": "職位2",
-      "duringEmployment1": "到職期間(年資)1",
-      "duringEmployment2": "到職期間(年資)2",
+      "employmentTerm1": "在職期間(年資)1",
+      "employmentTerm2": "在職期間(年資)2",
       "issuedDate1": "發照日期1",
       "institution2": "核發單位2",
       "institution3": "核發單位3",
@@ -783,8 +783,8 @@
     "birthDate",
     "age",
     "id",
-    "unmarried",
-    "married",
+    "check_unmarried",
+    "check_married",
     "homePhone",
     "phone",
     "height",
@@ -792,39 +792,39 @@
     "mail",
     "address1",
     "address2",
-    "familyName",
-    "familyRelationship",
-    "familyPhone",
-    "familyAddress",
+    "emergencyContactName",
+    "emergencyContactRelationship",
+    "emergencyContactPhone",
+    "emergencyContactAddress",
     "school",
     "major",
     "companyName1",
     "companyName2",
-    "graduated",
-    "ungraduated",
+    "check_graduated",
+    "check_ungraduated",
     "reason1",
     "reason2",
-    "word",
-    "excel",
-    "powerPoint",
-    "other",
+    "check_word",
+    "check_excel",
+    "check_powerPoint",
+    "check_otherSkill",
     "skill",
-    "motor",
-    "car",
-    "taxi",
-    "truck",
-    "other1",
+    "check_motor",
+    "check_car",
+    "check_taxi",
+    "check_truck",
+    "check_otherDriverLicense",
     "driverLicense",
     "license1",
     "license2",
     "license3",
     "institution1",
     "startDate",
-    "studyingYear",
+    "academicTerm",
     "position1",
     "position2",
-    "duringEmployment1",
-    "duringEmployment2",
+    "employmentTerm1",
+    "employmentTerm2",
     "issuedDate1",
     "institution2",
     "institution3",
