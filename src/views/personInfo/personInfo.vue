@@ -12,7 +12,6 @@
 							</el-button-group>
 						</div>
 						
-						<!--- 捲起捲起來 --->
 						<el-collapse v-model="activeNames">
 							<el-collapse-item title="資料表格" name="1">
 								<el-form-item label="部門" :label-width="labelWidth1">
