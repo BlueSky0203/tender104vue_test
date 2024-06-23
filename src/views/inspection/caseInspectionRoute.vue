@@ -13,7 +13,7 @@
 									<span>行政區</span>
 								</div>
 								<el-select class="district-select" v-model="listQuery.zipCode">
-									<el-option v-for="zip in options.districtOrder" :key="zip" :label="options.districtMap[zip].district" :value="Number(zip)" />
+									<el-option v-for="zip in options.districtOrder.filter(zip => zip != 1003)" :key="zip" :label="options.districtMap[zip].district" :value="Number(zip)" />
 								</el-select>
 							</div>
 						</div>
@@ -229,13 +229,12 @@ export default {
 			await this.initMap();
 
 			await getDistMap().then(response => {
-				Object.keys(response.data.districtMap).filter(key => key != 1000 && key <= 1001).forEach(key => {
+				Object.keys(response.data.districtMap).filter(key => !['1000', '1002'].includes(key) && key <= 1003).forEach(key => {
 					this.$set(this.options.districtMap, key, response.data.districtMap[key]);
 					this.options.districtOrder.push(key);
 				})
 
-				const lastIndex = this.options.districtOrder.length - 1;
-				this.options.districtOrder = [ this.options.districtOrder[lastIndex], ...this.options.districtOrder.slice(0, lastIndex) ];
+				this.options.districtOrder = [ 1001, ...this.options.districtOrder.filter(key => key != 1001) ];
 				this.blockFilter();
 			});
 		}).catch(err => console.log("err: ", err));
@@ -444,9 +443,24 @@ export default {
 			this.loading = true;
 			this.handleRemove(); 
 			this.blockList = [];
+
+			this.dataLayer.mask.setStyle(feature => {
+				// console.log(feature);
+				const condition = [1000].includes(this.listQuery.zipCode);
+
+				return {
+					strokeColor: "#000000",
+					strokeWeight: 0,
+					strokeOpacity: 1,
+					fillColor: "#000000",
+					fillOpacity: condition ? 0 : 0.7,
+					zIndex: 0
+				}
+			});
+			
 			this.dataLayer.district.setStyle(feature => {
 				// console.log(feature);
-				const condition = this.listQuery.zipCode == 1001 || this.options.districtMap[this.listQuery.zipCode].district.includes(feature.getProperty("TOWNNAME"));
+				const condition = [999, 1000, 1001, 1003].includes(this.listQuery.zipCode) || this.options.districtMap[this.listQuery.zipCode].district.includes(feature.getProperty("TOWNNAME"));
 
 				return {
 					strokeColor: "#827717",
@@ -500,7 +514,7 @@ export default {
 
 			return new Promise((resolve, reject) => {
 				let query = {
-					zipCode: this.listQuery.zipCode == 1001 ? 0 : this.listQuery.zipCode
+					zipCode: [1001, 999].includes(this.listQuery.zipCode) ? 0 : this.listQuery.zipCode
 				};
 
 				if (this.listQuery.widthType == 1) query.width = this.listQuery.width;

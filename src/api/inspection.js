@@ -100,6 +100,14 @@ export function uploadInspectionCaseNco(data) {
 	})
 }
 
+export function exportToDistress(data) {
+	return request({
+		url: '/inspection/exportCaseDistress',
+		method: 'post',
+		data
+	})
+}
+
 // 追蹤列表
 export function getCaseTrackingList(query) {
 	return request({
@@ -114,5 +122,31 @@ export function setCaseTrackingSpec(id, data) {
 		url: `/inspection/caseTrackingList/${id}`,
 		method: 'post',
 		data
+	})
+}
+
+export function setCaseTrackingFlow(id, data) {
+	return request({
+		url: `/inspection/caseTrackingList/flow/${id}`,
+		method: 'put',
+		data
+	})
+}
+
+// 回報分析
+export function getCaseTrackingStatic(query) {
+	return request({
+		url: '/inspection/caseTrackingStatic',
+		method: 'get',
+		params: query
+	})
+}
+
+// 回報分析 - 時間
+export function getCaseTrackingStaticTime(query) {
+	return request({
+		url: '/inspection/caseTrackingStaticTime',
+		method: 'get',
+		params: query
 	})
 }

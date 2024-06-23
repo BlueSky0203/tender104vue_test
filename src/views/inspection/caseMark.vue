@@ -1,7 +1,7 @@
 <template>
 	<div class="case-mark" v-loading="loading"> 
 		<div class="header-bar">
-			<h2 class="route-title">缺失標記</h2>
+			<h2 class="route-title">標記缺失</h2>
 			<div class="filter-container">
 				<span class="filter-item" style="display: inline-flex">
 					<el-button :type="showLayerAttach ? 'primary' : 'info'" @click="showLayerAttach = !showLayerAttach">路線圖層</el-button>
@@ -12,7 +12,7 @@
 									<span>行政區</span>
 								</div>
 								<el-select class="district-select" v-model="listQuery.inspectRoundZipCode">
-									<el-option v-for="(info, zip) in options.districtList" :key="zip" :label="info.name" :value="Number(zip)" />
+									<el-option v-for="zip in options.districtOrder.filter(zip => zip != 1001)" :key="zip" :label="options.districtMap[zip].district" :value="Number(zip)" />
 								</el-select>
 							</div>
 						</div>
@@ -34,25 +34,58 @@
 					</el-card>
 				</span>
 				<br>
-				<span class="filter-item">
-					<el-input v-model="listQuery.inspectId" placeholder="請輸入" size="medium" style="width: 254px;">
-						<span slot="prepend">巡查Id</span>
-					</el-input>
-				</span>
-				<br>
-				<span class="filter-item">
-					<el-input v-model="listQuery.caseInspectId" placeholder="請輸入" size="medium" style="width: 254px;">
-						<span slot="prepend">前次巡查Id</span>
-					</el-input>
-				</span>
-				<el-button class="filter-item" type="success" icon="el-icon-download" size="small" @click="getList()">載入</el-button>
-				<br>
-				<span class="filter-item">
-					<el-input v-model="listQuery.caseId" placeholder="請輸入" size="medium" style="width: 254px;" :disabled="Object.keys(caseGeoJson.caseNow).length == 0">
-						<span slot="prepend">缺失Id</span>
-					</el-input>
-				</span>
-				<el-button class="filter-item" type="primary" icon="el-icon-search" size="small" :disabled="Object.keys(caseGeoJson.caseNow).length == 0" @click="search()">搜尋</el-button>
+				<span class="filter-item" style="display: inline-flex">
+					<el-button class="filter-item" :type="showSearch ? 'primary' : 'info'" icon="el-icon-search" :circle="!showSearch" size="mini" @click="showSearch = !showSearch" />
+					<span v-if="showSearch" class="filter-item">
+						<div v-if="listQuery.filterType == 2" class="select-contract">
+							<el-select v-model="listQuery.filterType" popper-class="type-select">
+								<el-option label="路線" :value="1" />
+								<el-option label="合約" :value="2" />
+							</el-select>
+							<el-select v-model.number="listQuery.tenderRound" class="tender-select" popper-class="type-select tender">
+								<el-option v-for="(val, type) in options.tenderRoundMap" :key="type" :label="val.name" :value="Number(type)">
+									<div :style="`color: #${Math.floor(val.tenderId * 16777215).toString(16).substr(0, 8)}`">{{ val.name }}</div>
+								</el-option>
+							</el-select>
+							<br>
+							<el-button-group v-if="inspectIdList.length > 0" class="filter-item">
+								<el-button type="success" size="small" :plain="listQuery.inspectId != 0" @click="changeInspect(0)">全部</el-button>
+								<el-button v-for="inspectId in inspectIdList" :key="inspectId" type="primary" size="small" :plain="listQuery.inspectId != inspectId" @click="changeInspect(inspectId)">{{ inspectId }}</el-button>
+							</el-button-group>
+						</div>
+						<el-input v-else v-model="listQuery.inspectId" placeholder="請輸入" size="medium" style="width: 254px;">
+							<el-select slot="prepend" v-model="listQuery.filterType" popper-class="type-select">
+								<el-option label="路線" :value="1" />
+								<el-option label="合約" :value="2" />
+							</el-select>
+						</el-input>
+				
+						<br>
+						<div v-if="listQuery.filterTypeCase == 2" class="select-contract">
+							<el-select v-model="listQuery.filterTypeCase" popper-class="type-select">
+								<el-option label="前次路線" :value="1"></el-option>
+								<el-option label="前次合約" :value="2"></el-option>
+							</el-select>
+							<el-select v-model.number="listQuery.caseTenderRound" class="tender-select" popper-class="type-select tender">
+								<el-option v-for="(val, type) in options.tenderRoundMap" :key="type" :label="val.name" :value="Number(type)">
+									<div :style="`color: #${Math.floor(val.tenderId * 16777215).toString(16).substr(0, 8)}`">{{ val.name }}</div>
+								</el-option>
+							</el-select>
+						</div>
+						<el-input v-else v-model="listQuery.caseInspectId" placeholder="請輸入" size="medium" style="width: 254px;">
+							<el-select slot="prepend" v-model="listQuery.filterTypeCase" popper-class="type-select">
+								<el-option label="前次路線" :value="1"></el-option>
+								<el-option label="前次合約" :value="2"></el-option>
+							</el-select>
+						</el-input>
+						<el-button class="filter-item" type="success" icon="el-icon-download" size="small" @click="listQuery.trackingId = 0; getList()">載入</el-button>
+						<br>
+						<el-input v-model="listQuery.caseId" placeholder="請輸入" size="medium" style="width: 254px;" :disabled="Object.keys(caseGeoJson.caseNow).length == 0">
+							<span slot="prepend">缺失Id</span>
+						</el-input>
+						<el-button class="filter-item" type="primary" icon="el-icon-search" size="small" :disabled="Object.keys(caseGeoJson.caseNow).length == 0" @click="search()">搜尋</el-button>
+					</span>
+				</span>	
 			</div>
 		</div>
 		<el-row>
@@ -68,7 +101,7 @@
 					<span />
 					<span />
 				</div>
-				<panorama-view ref="panoramaView" :loading.sync="loading" :isUpload.sync="isUpload" :listQuery="listQuery" :panoramaInfo.sync="panoramaInfo" :options="options" :caseGeoJson="caseGeoJson" @showPanoramaLayer="showPanoramaLayer" @setMarkerPosition="setMarkerPosition" @setHeading="setHeading" @addMarker="addMarker" @clearMarker="clearMarker" @hightLight="hightLight" @setCaseImgViewer="setCaseImgViewer" @ @uploadCase="uploadCase" />
+				<panorama-view ref="panoramaView" :loading.sync="loading" :isUpload.sync="isUpload" :panoramaInfo.sync="panoramaInfo" :options="options" :caseGeoJson="caseGeoJson" @showPanoramaLayer="showPanoramaLayer" @setMarkerPosition="setMarkerPosition" @setHeading="setHeading" @addMarker="addMarker" @clearMarker="clearMarker" @hightLight="hightLight" @setCaseImgViewer="setCaseImgViewer" @uploadCase="uploadCase" />
 			</el-col>
 		</el-row> 
 
@@ -84,8 +117,9 @@
 <script>
 import { Loader } from "@googlemaps/js-api-loader";
 import moment from 'moment';
-import { getPanoramaJson, getInspectionCaseGeoJson, uploadInspectionCase } from "@/api/inspection";
-import { getInspectionRoute } from "@/api/inspection";
+import * as jsts from 'jsts/dist/jsts.min.js';
+import { getPanoramaJson, getInspectionCaseGeoJson, uploadInspectionCase, getInspectionRoute } from "@/api/inspection";
+import { getTenderRound, getDistMap, getDTypeMap, getCompetentTypeMap } from "@/api/type";
 import data2blob from '@/utils/data2blob.js';
 import PanoramaView from '@/components/PanoramaView';
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer';
@@ -112,99 +146,41 @@ export default {
 			init: true,
 			isUpload: false,
 			showLayerAttach: false,
+			showSearch: true,
 			showImgViewer: false,
 			imgUrls: [],
-			map: null,
+			// map: null,
 			inspectIdNow: null,
+			inspectIdList: [],
+			tenderRoundNow: null,
 			clientStartX: 0,
 			caseGeoJson: {
 				caseNow: {}, 
 				casePrev: {}
 			},
-			polyLine: [],
+			// polyLine: {},
 			markersTemp: {},
 			pointCurr: null,
-			pickerOptions: {
-				firstDayOfWeek: 1,
-				shortcuts: [
-					{
-						text: "今日",
-						onClick(picker) {
-							const date = moment();
-							picker.$emit("pick", date);
-						},
-					},
-					{
-						text: "昨日",
-						onClick(picker) {
-							const date = moment().subtract(1, "d");
-							picker.$emit("pick", date);
-						}
-					},
-					{
-						text: "前日",
-						onClick(picker) {
-							const date = moment().subtract(2, "d");
-							picker.$emit("pick", date);
-						}
-					}
-				],
-				disabledDate(date) {
-					return moment(date).valueOf() >= moment().endOf("d").valueOf();
-				},
-			},
-			searchDate: moment().startOf("d"),
-			searchRange: "",
 			screenWidth: 0,
 			listQuery: {
+				filterType: 1,
+				filterTypeCase: 1,
+				tenderRound: null,
+				caseTenderRound: null,
 				inspectId: "",
 				caseInspectId: "",
-				caseId: ""
+				caseId: "",
+				trackingId: 0
 			},
 			panoramaInfo: {
 				data: [],
-				sceneSetting: {}, 
+				sceneSetting: [], 
 				streetViewList: {}
 			},
 			options: {
-				districtList: {
-					100: {
-						name: "中正區"
-					},
-					103: {
-						name: "大同區"
-					},
-					104: {
-						name: "中山區"
-					},
-					105: {
-						name: "松山區"
-					},
-					106: {
-						name: "大安區"
-					},
-					108: {
-						name: "萬華區"
-					},
-					110: {
-						name: "信義區"
-					},
-					111: {
-						name: "士林區"
-					},
-					112: {
-						name: "北投區"
-					},
-					114: {
-						name: "內湖區"
-					},
-					115: {
-						name: "南港區"
-					},
-					116: {
-						name: "文山區"
-					},
-				},
+				tenderRoundMap: {},
+				districtMap: {},
+				districtOrder: [],
 				inspectRound: {
 					0: "全部",
 					1: "週期一",
@@ -215,6 +191,7 @@ export default {
 					6: "週期六",
 					7: "週期七"
 				},
+				competentTypeMap: {},
 				imgTypeMap: {
 					"imgZoomIn": "近照",
 					"imgZoomOut": "遠照"
@@ -256,30 +233,25 @@ export default {
 						color: "#607D8B"
 					}
 				],
-				caseTypeMap: {
-					15: "坑洞",
-					29: "縱向及橫向裂縫",
-					16: "龜裂",
-					32: "車轍",
-					18: "隆起與凹陷",
-					34: "人手孔缺失(不列入PCI)",
-					51: "薄層剝離",
-					21: "其他(不列入PCI)",
-					50: "塊狀裂縫",
-					53: "推擠",
-					65: "補綻及管線回填",
-					54: "冒油",
-					55: "波浪狀鋪面",
-					56: "車道與路肩分離",
-					49: "滑溜裂縫",
-					66: "骨材剝落",
-					58: "人孔高差(只列入PCI)"
+				deviceTypeMap: {
+					1: "AC路面",
+					2: "人行道",
+					7: "橋樑"
 				},
-				caseTypeMapOrder: [ 15, 29, 16, 32, 18, 34, 51, 21, 50, 53, 65, 54, 55, 56, 49, 66, 58 ],
+				caseTypeMap: {},
+				caseTypeMapFlat: {},
+				caseTypeMapOrder: {
+					1: [ 15, 29, 16, 32, 18, 34, 51, 21, 50, 53, 65, 54, 55, 56, 49, 66, 58 ]
+				},
 				caseLevelMap: {
 					1: "輕",
 					2: "中",
 					3: "重"
+				},
+				caseLevelMapE: {
+					1: "L",
+					2: "M",
+					3: "H"
 				},
 				roadDir: {
 					// 0: "無",
@@ -299,6 +271,8 @@ export default {
 	},
 	created() {
 		this.dataLayer = { caseNow: {}, casePrev: {}, route: {} };
+		this.polyLine = {};
+		this.caseGeoJsonIns = {};
 
 		// Google Map錯誤處理
 		window.gm_authFailure = () => { 
@@ -312,11 +286,77 @@ export default {
 		// 初始化Google Map
 		loader.load().then(async () => {
 			await this.initMap();
-			if (this.$route.query.inspectId || this.$route.query.inspectId && this.$route.query.caseInspectId) {
-				this.listQuery.inspectId = this.$route.query.inspectId;
-				this.listQuery.caseInspectId = this.$route.query.caseInspectId;
-				this.getList();
-			}
+
+			getTenderRound().then(response => {
+				this.options.tenderRoundMap = response.data.list.reduce((acc, cur) => {
+					if(cur.tenderId <= 1001) return acc;
+
+					let roundId = `${cur.tenderId}${String(cur.round).padStart(3, '0')}`;
+					if(cur.zipCodeSpec != 0) roundId += `${cur.zipCodeSpec}`;
+
+					let name = `${cur.tenderName}`;
+					if(cur.title.length != 0) name += `_${cur.title}`;
+
+					acc[roundId] = { 
+						id: cur.id,
+						name, 
+						tenderId: cur.tenderId, 
+						isMain: cur.zipCodeSpec == 0,
+						zipCode: cur.zipCodeSpec == 0 ? cur.zipCode : cur.zipCodeSpec, 
+						roundStart: cur.roundStart, 
+						roundEnd: cur.roundEnd
+					};
+					return acc;
+				}, {});
+
+				if(Object.keys(this.options.tenderRoundMap).length == 0) {
+					this.options.tenderRoundMap = { "-1": { id: -1 }};
+					this.listQuery.tenderRound = -1;
+				}
+
+				this.listQuery.trackingId = this.$route.query.trackingId || 0;
+
+				if(this.$route.query.caseInspectId) {
+					this.listQuery.filterTypeCase = 1;
+					this.listQuery.caseInspectId = this.$route.query.caseInspectId;
+				} else if(this.$route.query.caseTenderRound && Object.keys(this.options.tenderRoundMap).length != 0) {
+					this.listQuery.filterTypeCase = 2;
+					this.listQuery.caseTenderRound = Number(this.$route.query.caseTenderRound);
+				}
+
+				if (this.$route.query.inspectId) {
+					this.listQuery.filterType = 1;
+					this.listQuery.inspectId = this.$route.query.inspectId;
+					this.listQuery.caseInspectId = this.$route.query.caseInspectId;
+					this.getList();
+				} else if(this.$route.query.tenderRound && Object.keys(this.options.tenderRoundMap).length != 0) {
+					this.listQuery.filterType = 2;
+					this.listQuery.tenderRound = Number(this.$route.query.tenderRound);
+					this.getList();
+				}
+			});
+
+			getDistMap().then(response => {
+				Object.keys(response.data.districtMap).filter(key => key < 1000).forEach(key => {
+					this.$set(this.options.districtMap, key, response.data.districtMap[key]);
+					this.options.districtOrder.push(key);
+				});
+			});
+
+			getDTypeMap().then(response => {
+				this.options.caseTypeMap = response.data.distressTypeMap;
+				this.options.caseTypeMapFlat = Object.values(this.options.caseTypeMap).reduce((acc, cur) => {
+					for (const key in cur) acc[key] = cur[key];
+					return acc;
+				}, {});
+				for(const id in this.options.caseTypeMap) {
+					if(this.options.caseTypeMapOrder[id] == undefined) this.options.caseTypeMapOrder[id] = Object.keys(this.options.caseTypeMap[id]);
+				}
+			})
+
+			getCompetentTypeMap().then(response => {
+				this.options.competentTypeMap = response.data.competentTypeMap;
+			})
 		}).catch(err => console.log("err: ", err));
 	},
 	mounted() { 
@@ -413,6 +453,18 @@ export default {
 					this.map.overlayMapTypes.push(labelsMapType);
 				}
 
+				// 載入區域GeoJson
+				this.dataLayer.district = new google.maps.Data({ map: this.map });
+				this.dataLayer.district.loadGeoJson(`/assets/json/district.geojson?t=${Date.now()}`);
+				this.dataLayer.district.setStyle({
+					strokeColor: "#F08080",
+					strokeWeight: 3,
+					strokeOpacity: 0.3,
+					fillColor: "#000000",
+					fillOpacity: 0,
+					zIndex: 0
+				})
+
 				// 缺失
 				this.dataLayer.caseNow = new google.maps.Data({ map: this.map });
 				this.setDataLayer(this.dataLayer.caseNow);
@@ -469,7 +521,7 @@ export default {
 				if(feature.getProperty("DistressType")) {
 					const colorFilter = this.options.caseColorMap.filter(color => {
 						let caseFlag = false;
-						const distressType = this.options.caseTypeMap[feature.getProperty("DistressType")];
+						const distressType = this.options.caseTypeMapFlat[feature.getProperty("DistressType")];
 						for(const name of color.name) {
 							caseFlag = (distressType.indexOf(name) != -1);
 							// console.log(name, caseFlag);
@@ -488,25 +540,24 @@ export default {
 				if(feature.getProperty("isPoint")) {
 					return { 
 						icon: { 
-							url: `/assets/icon/icon_case_${this.options.caseLevelMap[feature.getProperty("DistressLevel")]}.png`,
-							anchor: new google.maps.Point(5, 5),
+							url: `/assets/icon/icon_case_${this.options.caseLevelMapE[feature.getProperty("DistressLevel")]}.png`,
 							scaledSize: new google.maps.Size(25, 25),
 						}
 					};
 				} else if(feature.getProperty("isLine")) {
 					return { 
-						strokeColor: isPrev ? '#556B2F' : color,
-						strokeWeight: 3,
-						strokeOpacity: isPrev ? 0.4 : 0.8,
+						strokeColor: feature.getProperty("DateMark_At") ? '#E6A23C' : isPrev ? '#556B2F' : color,
+						strokeWeight: 6,
+						strokeOpacity: feature.getProperty("DateMark_At") ? 0.2 : isPrev ? 0.4 : 0.8,
 						fillOpacity: 0
 					};
 				} else {
 					return { 
-						strokeColor: isPrev ? '#556B2F' : color,
+						strokeColor: feature.getProperty("DateMark_At") ? '#E6A23C' : isPrev ? '#556B2F' : color,
 						strokeWeight: 1,
-						strokeOpacity: 1,
+						strokeOpacity: 0.5,
 						fillColor: color,
-						fillOpacity: isPrev ? 0.3 : 0.7
+						fillOpacity: feature.getProperty("DateMark_At") ? 0.1 : isPrev ? 0.3 : 0.7
 					};
 				}
 			});
@@ -519,66 +570,134 @@ export default {
 			});
 		},
 		getList() {
-			this.loading = true;
-			this.init = true;
-			this.clearAll();
-			this.$router.push({ query: { inspectId: this.listQuery.inspectId, caseInspectId: this.listQuery.caseInspectId }});
+			if(!Number(this.listQuery.tenderRound) && !this.listQuery.inspectId && this.listQuery.inspectId.length == 0) {
+				this.$message({
+					message: `請輸入${this.listQuery.filterType == 1 ? '路線' : '合約'}`,
+					type: "error",
+				});
+			} else {
+				this.loading = true;
+				this.init = true;
+				this.inspectIdNow = null;
+				this.tenderRoundNow = null;
+				this.clearAll();
 
-			getPanoramaJson({
-				inspectId: this.listQuery.inspectId
-			}).then(response => {
-				if(response.data.inspection.length == 0) {
-					this.$message({
-						message: "查無資料",
-						type: "error",
-					});
-					// this.$nextTick(() => this.moveHandle(this.screenWidth));
-					this.loading = false;
+				let query = {};
+				let routerQuery = { query: {} };
+				if(this.listQuery.filterType == 1) {
+					this.listQuery.tenderRound = null;
+					routerQuery.query.inspectId = this.listQuery.inspectId;
+					query.inspectId = this.listQuery.inspectId;
 				} else {
-					this.inspectIdNow = this.listQuery.inspectId;
-					const jsonUrl = response.data.inspection[0].url;
-
-					// fetch('/test/streetViewFix.json').then(response => response.json()).then(json => {
-					fetch(jsonUrl).then(response => response.json()).then(json => {
-						// this.panoramaInfo = json;
-						// this.panoramaInfo = Object.assign({}, this.panoramaInfo, json);
-						this.$set(this.panoramaInfo, "data", json.data);
-						this.$set(this.panoramaInfo, "sceneSetting", json.sceneSetting);
-						// console.log(this.panoramaInfo);
-						this.setPanoramaLayer();
-						// this.openPanorama(true);
-						// this.loading = false;
-
-						this.getCaseList();
-					});
+					this.listQuery.inspectId = null;
+					routerQuery.query.tenderRound = this.listQuery.tenderRound;
+					const tenderRound = this.options.tenderRoundMap[this.listQuery.tenderRound];
+					query.surveyId = tenderRound.id;
 				}
-			}).catch(err => this.loading = false);
+
+				if(this.listQuery.filterTypeCase == 1) routerQuery.query.caseInspectId = this.listQuery.caseInspectId || 0;
+				else routerQuery.query.caseTenderRound = this.listQuery.caseTenderRound || 0;
+
+				if(this.listQuery.trackingId != 0) routerQuery.query.trackingId = this.listQuery.trackingId;
+				this.$router.push(routerQuery);
+
+				getPanoramaJson(query).then(async response => {
+					if(response.data.inspection.length == 0) {
+						this.$message({
+							message: "查無資料",
+							type: "error",
+						});
+						// this.$nextTick(() => this.moveHandle(this.screenWidth));
+						this.loading = false;
+					} else {
+						if(this.listQuery.filterType == 1) this.inspectIdNow = this.listQuery.inspectId;
+						else {
+							this.tenderRoundNow = this.listQuery.tenderRound;
+							if(this.listQuery.filterType == 2) this.inspectIdList = response.data.inspection.map(l => l.InspectId);
+						}
+
+						let path = [];
+						for(const inspecData of response.data.inspection) {
+							await fetch(inspecData.url).then(response => response.json()).then(async (json) => {
+								this.panoramaInfo.sceneSetting.push({ inspectId: inspecData.InspectId, ...json.sceneSetting });
+								this.panoramaInfo.data.push(json.data);
+
+								const posData = json.data.flat().map(info => info.position);
+								path.push(...posData);
+								await this.createPolyLine(inspecData.InspectId, json.data);
+
+								this.pointCurr.setMap(this.map);
+							});
+						}
+						this.getCaseList();
+
+						if(this.listQuery.trackingId == 0) {
+							const bounds = new google.maps.LatLngBounds();
+							path.forEach(position => {
+								if(position.lat >= 22 && position.lat <= 26 && position.lng >= 120 && position.lng <= 122) bounds.extend(position);
+							});
+							this.map.fitBounds(bounds);
+						}
+					}
+				}).catch(err => this.loading = false);
+			}
 		},
 		getCaseList() {
-			for(const layerType of ['casePrev', 'caseNow']) {
-				this.dataLayer[layerType].forEach(feature => this.dataLayer[layerType].remove(feature));
+			let query = {};
+			if(this.listQuery.filterType == 1) query.inspectId = this.listQuery.inspectId;
+			else {
+				const tenderRound = this.options.tenderRoundMap[this.listQuery.tenderRound];
+				query.surveyId = tenderRound.id;
 			}
-			getInspectionCaseGeoJson({
-				inspectId: this.listQuery.inspectId,
-				caseInspectId: this.listQuery.caseInspectId || 0
-			}).then(response => {
-				// this.caseGeoJson = response.data.caseGeoJson;
+
+			if(this.listQuery.filterTypeCase == 1) query.caseInspectId = this.listQuery.caseInspectId || 0;
+			else {
+				const caseTenderRound = this.options.tenderRoundMap[this.listQuery.caseTenderRound];
+				query.caseSurveyId = caseTenderRound.id;
+			}
+			query.trackingId = Number(this.listQuery.trackingId);
+
+			getInspectionCaseGeoJson(query).then(response => {
 				this.caseGeoJson = Object.assign({}, this.caseGeoJson, response.data.caseGeoJson);
 				this.dataLayer.caseNow.addGeoJson(this.caseGeoJson.caseNow);
 				this.dataLayer.casePrev.addGeoJson(this.caseGeoJson.casePrev);
+				this.$refs.panoramaView.setStreetViewList();
+
+				if(this.listQuery.filterType == 2) {
+					this.caseGeoJsonIns = { 0:  response.data.caseGeoJson.caseNow };
+					for(const inspectId of this.inspectIdList) {
+						const featureFilter = response.data.caseGeoJson.caseNow.features.filter(feature => feature.properties.InspectId == inspectId);
+						this.caseGeoJsonIns[inspectId] = {
+							"type": "FeatureCollection",
+							"name": "caseGeoJSON",
+							"features": featureFilter
+						};
+					}
+					// this.dataLayer.caseNow.addGeoJson(this.caseGeoJson[0]);
+					this.listQuery.inspectId = 0;
+				} 
+				
+				if(this.listQuery.trackingId != 0) {
+					const bounds = new google.maps.LatLngBounds();
+					[...this.caseGeoJson.caseNow.features, ...this.caseGeoJson.casePrev.features].forEach(caseSpec => {
+						console.log(caseSpec);
+						const position = caseSpec.properties.CenterPt;
+						if(position.lat >= 22 && position.lat <= 26 && position.lng >= 120 && position.lng <= 122) bounds.extend(position);
+					});
+					this.map.fitBounds(bounds);
+				}
 
 				this.$nextTick(() => {
-					if(localStorage.inspectIdNow == this.inspectIdNow && localStorage.sceneIdNow) {
+					if((sessionStorage.inspectIdNow == this.inspectIdNow || localStorage.tenderRoundNow == this.tenderRoundNow) && localStorage.sceneIdNow) {
 						this.$confirm(`是否跳至前次操作街景位址?`).then(() => {
 							this.init = false;
-							this.showPanoramaLayer(localStorage.sceneIdNow) ;
+							this.showPanoramaLayer(localStorage.sceneIdNow);
 						})
 					} else {
-						localStorage.inspectIdNow = this.inspectIdNow;
+						sessionStorage.inspectIdNow = this.inspectIdNow;
+						localStorage.tenderRoundNow = this.tenderRoundNow;
 						localStorage.removeItem("sceneIdNow");
 					}
-					this.$refs.panoramaView.resetCaseHotSpot();	
-					// this.openPanorama(true);
 					this.loading = false;
 				});
 			}).catch(err => this.loading = false);
@@ -589,7 +708,7 @@ export default {
 
 			getInspectionRoute({
 				zipCode: this.listQuery.inspectRoundZipCode,
-				inspectRound: this.listQuery.inspectRound,
+				inspectRound: this.listQuery.inspectRound
 			}).then(response => {
 				if (response.data.blockList.length == 0 && response.data.routeList.length == 0) {
 					this.$message({
@@ -617,6 +736,19 @@ export default {
 						geoJSON.features.push(feature);
 					}
 					this.dataLayer.route.addGeoJson(geoJSON);
+
+					this.dataLayer.district.forEach(feature => {
+						// console.log(feature);
+						const condition = this.options.districtList[this.listQuery.inspectRoundZipCode].name.includes(feature.getProperty("TOWNNAME"));
+						this.dataLayer.district.overrideStyle(feature, {
+							strokeColor: "#F08080",
+							strokeWeight: 3,
+							strokeOpacity: condition ? 0.9 : 0.2,
+							fillColor: "#000000",
+							fillOpacity: condition ? 0 : 0.4,
+							zIndex: 0
+						})
+					});
 				}
 				this.loading = false;
 			}).catch(err => this.loading = false);
@@ -627,9 +759,11 @@ export default {
 		},
 		uploadCase(caseInfo) {
 			let uploadForm = new FormData();
-			uploadForm.append('inspectId', this.listQuery.inspectId);
+			uploadForm.append('uploadType', Number(caseInfo.uploadType));
+			uploadForm.append('inspectId', sessionStorage.inspectIdNow || this.inspectIdNow);
 			uploadForm.append('trackingId', Number(caseInfo.trackingId));
 			uploadForm.append('dateReport', this.formatTime(caseInfo.dateReport));
+			uploadForm.append('competentId', Number(caseInfo.competentId));
 			uploadForm.append('distressType', caseInfo.distressType);
 			uploadForm.append('distressLevel', caseInfo.distressLevel);
 			uploadForm.append('millingLength', Number(caseInfo.millingLength));
@@ -641,6 +775,8 @@ export default {
 			uploadForm.append('geoJson', JSON.stringify(caseInfo.geoJson));
 			uploadForm.append('imgZoomIn', data2blob(caseInfo.imgZoomIn, 'image/jpeg'), 'imgZoomIn.jpg');
 			uploadForm.append('imgZoomOut', data2blob(caseInfo.imgZoomOut, 'image/jpeg'), 'imgZoomOut.jpg');
+			uploadForm.append('imgZoomIn_unMark', data2blob(caseInfo.imgZoomIn_unMark, 'image/jpeg'), 'imgZoomIn_unMark.jpg');
+			uploadForm.append('pt_unMark', JSON.stringify(caseInfo.pt_unMark));
 			// console.log(uploadForm);
 
 			uploadInspectionCase(uploadForm).then(response => {
@@ -675,37 +811,29 @@ export default {
 			// this.$refs.compass.style.transform = `rotate(${-azimuth}deg)`;
 			this.map.setHeading(azimuth);
 		},
-		async setPanoramaLayer() {
-			// console.log("setPanoramaLayer");
-			this.$refs.panoramaView.setStreetViewList();
-			await this.createPolyLine();
-			this.pointCurr.setMap(this.map);
-		},
-		async createPolyLine() {
-			const lineInfo = this.panoramaInfo.data;
-			if (!lineInfo) return;
-
-			this.$refs.panoramaView.setPanoramaScene();
-
+		async createPolyLine(inspectId, lineInfo) {
 			// 掛載 polyline Layer(street view)
 			lineInfo.forEach((polyInfo, index) => {
 				const path = polyInfo.map((info) => info.position);
-				this.polyLine.push(
+				if(this.polyLine[inspectId] == undefined) this.polyLine[inspectId] = [];
+				this.polyLine[inspectId].push(
 					new google.maps.Polyline({
 						path,
 						geodesic: true,
 						strokeColor: '#409EFF',
-						strokeOpacity: 1,
-						strokeWeight: 3,
+						strokeOpacity: 0.5,
+						strokeWeight: 6,
 						map: this.map,
 						zIndex: 10
 					})
 				);
 
-				this.polyLine[index].addListener("click", (event) => {
+				this.polyLine[inspectId][index].addListener("click", (event) => {
 					this.init = false;
+					this.pointCurr.setMap(this.map);
+					sessionStorage.inspectIdNow = inspectId;
 					const pointPos = event.latLng.toJSON();
-					const posList = this.panoramaInfo.data[index].map(info => ({ ...info.position, sceneId: info.fileName }));
+					const posList = this.panoramaInfo.data.flat(2).map(info => ({ ...info.position, sceneId: info.fileName }));
 					const minDistObj = posList.reduce((minDistObj, curr) => {
 							const distance = Math.sqrt(Math.pow(pointPos.lat - curr.lat, 2) + Math.pow(pointPos.lng - curr.lng, 2));
 							if (minDistObj.dist > distance) {
@@ -718,15 +846,8 @@ export default {
 					);
 					this.showPanoramaLayer(minDistObj.sceneId);
 				})
-
-				const bounds = new google.maps.LatLngBounds();
-				path.forEach(position => {
-					if(position.lat >= 22 && position.lat <= 26 && position.lng >= 120 && position.lng <= 122) bounds.extend(position);
-				});
-				this.map.fitBounds(bounds);
-				console.log(bounds.getCenter().toString())
 			})
-			this.showPanoramaLayer(this.panoramaInfo.data[0][0].fileName);
+			this.showPanoramaLayer(this.panoramaInfo.data[0][0][0].fileName);
 		},
 		showPanoramaLayer(sceneId) {
 			// console.log("showPanoramaLayer");
@@ -770,7 +891,7 @@ export default {
 		setMarkerPosition(sceneId) {
 			// console.log("setMarkerPosition: ", sceneId);
 			this.sceneId = sceneId ? sceneId : this.sceneId;
-			const pointInfo = this.panoramaInfo.data.flat().filter(pt => pt.fileName == this.sceneId)[0];
+			const pointInfo = this.panoramaInfo.data.flat(2).filter(pt => pt.fileName == this.sceneId)[0];
 			this.pointCurr.setPosition(pointInfo.position);
 			
 			if(!this.init) {
@@ -779,7 +900,9 @@ export default {
 			}
 		},
 		showCaseContent(feature, position) {
-			const caseTypeStr = `${feature.getProperty("Id")} - ${this.options.caseTypeMap[feature.getProperty("DistressType")]} (${this.options.caseLevelMap[feature.getProperty("DistressLevel")]})`;
+			let caseTypeStr = `${feature.getProperty("Id")}`;
+			if(feature.getProperty("TrackingId") != 0) caseTypeStr += `(${feature.getProperty("TrackingId")})`;
+			caseTypeStr += ` - ${this.options.caseTypeMapFlat[feature.getProperty("DistressType")]} (${this.options.caseLevelMap[feature.getProperty("DistressLevel")]})`;
 			this.setCaseImgViewer({ imgUrls: [ `${feature.getProperty("ImgZoomOut")}` ] });
 			let contentText = `<div style="width: 200px;">`;
 			contentText += `<div> ${caseTypeStr} </div>`;
@@ -787,7 +910,7 @@ export default {
 			contentText += `</div>`;
 
 			this.infoWindow.setContent(contentText);
-			this.infoWindow.setOptions({ pixelOffset: new google.maps.Size(0, -10)});
+			this.infoWindow.setOptions({ pixelOffset: new google.maps.Size(0, feature.getProperty('isPoint') ? -20 : -10)});
 			this.infoWindow.setPosition(position);
 
 			this.infoWindow.open(this.map);
@@ -813,6 +936,22 @@ export default {
 					}
 				});
 			}
+		},
+		changeInspect(inspectId) {
+			for(const key in this.polyLine) for(const polyline of this.polyLine[key]) polyline.setMap(inspectId == 0 ? this.map : null);
+			this.setHeading(0);
+			this.pointCurr.setMap(null);
+			this.listQuery.inspectId = inspectId;
+
+			if(inspectId == -1) return;
+			else this.inspectIdNow = inspectId;
+
+			this.loading = true;
+			if(inspectId != 0) for(const polyLine of this.polyLine[inspectId]) polyLine.setMap(this.map);
+
+			this.dataLayer.caseNow.forEach(feature => this.dataLayer.caseNow.remove(feature));
+			this.dataLayer.caseNow.addGeoJson(this.caseGeoJsonIns[inspectId]);
+			this.loading = false;
 		},
 		async search() {
 			this.loading = true;
@@ -841,7 +980,7 @@ export default {
 						});
 						resolve();
 					} else {
-						console.log(caseSpec);
+						// console.log(caseSpec);
 						const depth = caseSpec.geometry.type == 'MultiLineString' ? 1 : 2;
 						const paths = caseSpec.geometry.coordinates.flat(depth).map(point => ({ lat: point[1], lng: point[0] }));
 						const bounds = new google.maps.LatLngBounds();
@@ -860,7 +999,7 @@ export default {
 		},
 		intersectRoute() {
 			this.dataLayer.route.revertStyle();
-			const jstsRoutePoints = this.panoramaInfo.data.flat(1).map(point => this.createJstsGeometry([[ point.position.lng, point.position.lat ]]));
+			const jstsRoutePoints = this.panoramaInfo.data.flat(2).map(point => this.createJstsGeometry([[ point.position.lng, point.position.lat ]]));
 			// console.log(jstsRoutePoints.length);
 			this.dataLayer.route.forEach(feature => {
 				feature.toGeoJson(json => {
@@ -894,17 +1033,21 @@ export default {
 		},
 		clearAll() {
 			// console.log("clearAll");
-			this.caseGeoJson = Object.assign({}, this.caseGeoJson, { caseNow: {}, casePrev: {} });
+			this.inspectIdList = [];
 
+			for(const layerType of ['casePrev', 'caseNow']) {
+				this.dataLayer[layerType].forEach(feature => this.dataLayer[layerType].remove(feature));
+			}
+			this.caseGeoJson = Object.assign({}, this.caseGeoJson, { caseNow: {}, casePrev: {} });
 			this.pointCurr.setMap(null);
 
-			for(const polyline of this.polyLine) polyline.setMap(null);
-			this.polyLine = [];
+			for(const key in this.polyLine) for(const polyline of this.polyLine[key]) polyline.setMap(null);
+			this.polyLine = {};
 
 			this.clearMarker();
 			this.dataLayer.route.revertStyle();
 
-			this.panoramaInfo = Object.assign({}, this.panoramaInfo, { data: [], sceneSetting: {}, streetViewList: {} });
+			this.panoramaInfo = Object.assign({}, this.panoramaInfo, { data: [], sceneSetting: [], streetViewList: {} });
 			this.$refs.panoramaView.removeAllScene();
 		},
 		moveHandle(nowClientX) {
@@ -944,8 +1087,7 @@ export default {
 // 	box-sizing: border-box
 .case-mark
 	position: relative
-	height: 100%
-	width: 100%
+	height: calc(100vh - 50px)
 	.header-bar
 		position: absolute
 		top: 0
@@ -962,8 +1104,32 @@ export default {
 			.el-input__inner
 				padding-left: 5px
 				text-align: center
-		.filter-item
-			margin-right: 5px
+			.filter-item
+				margin: 2px 5px
+				.select-contract
+					.el-select:first-child .el-input__inner
+						background-color: #F5F7FA
+						color: #909399
+						border-right: none
+						border-top-right-radius: 0
+						border-bottom-right-radius: 0
+						&:focus
+							border-color: #DCDFE6
+					.el-select:last-child .el-input__inner
+						border-top-left-radius: 0
+						border-bottom-left-radius: 0
+						padding-left: 10px
+						text-align: left
+					.el-select.tender-select
+						width: 240px
+						.el-input__inner
+							padding-left: 8px
+							padding-right: 10px
+							text-align: left
+						.el-input__suffix
+							right: 0
+							margin-right: -3px
+							transform: scale(0.7)
 	.touch-div 
 		position: absolute
 		top: 0

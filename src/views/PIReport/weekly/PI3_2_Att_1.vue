@@ -160,7 +160,6 @@ export default {
 			inputs: {
 				companyName: '聖東營造股份有限公司',
 				formatDate:'',
-				dateYear:'',
 				zipCode: 104,
 				district: '中山區',
 				serialNumber: '',
@@ -272,10 +271,10 @@ export default {
 				this.inputs.caseList = [];
 
 				let timeStart = moment(this.reportDate).day() == 0 
-					? moment(this.reportDate).day(-6).format("YYYY-MM-DD") 
-					: moment(this.reportDate).day(1).format("YYYY-MM-DD");
-				if(moment(timeStart).month() != moment(this.reportDate).month()) timeStart = moment(this.reportDate).startOf('month').format("YYYY-MM-DD");
-				const timeEnd = moment(this.reportDate).add(1, "d").format("YYYY-MM-DD");
+					? moment(this.reportDate).day(-6).subtract(8, 'hours').format("YYYY-MM-DD HH:mm:ss") 
+					: moment(this.reportDate).day(1).subtract(8, 'hours').format("YYYY-MM-DD HH:mm:ss");
+				if(moment(timeStart).month() != moment(this.reportDate).month()) timeStart = moment(this.reportDate).startOf('month').subtract(8, 'hours').format("YYYY-MM-DD HH:mm:ss");
+				const timeEnd = moment(this.reportDate).startOf('day').add(1, "d").subtract(8, 'hours').format("YYYY-MM-DD HH:mm:ss");
 
 				getCaseWarrantyList({
 					zipCode: Number(this.inputs.zipCode),
@@ -381,14 +380,14 @@ export default {
 		},
 		formatFormData(){
 			//日期格式
-			const checkDate = moment(this.checkDate).subtract(1911, 'year');
-			this.inputs.formatDate = checkDate.format("YYYY年MM月DD日").slice(1);
+			const checkDate = moment(this.checkDate).format("YYYY/MM/DD").split("/");
+			checkDate[0] = Number(checkDate[0]) - 1911;
+			this.inputs.formatDate = `${checkDate[0]}年${checkDate[1]}月${checkDate[2]}日`;
 			
-			const reportDate = moment(this.reportDate).subtract(1911, 'year');
-			//民國年份
-			this.inputs.dateYear = reportDate.year()
 			//紀錄編號
-			this.inputs.serialNumber = reportDate.format("YYYYMMDD02").slice(1) + String(this.initPage).padStart(2, '0');	
+			const reportDate = moment(this.reportDate).format("YYYY/MM/DD").split("/");
+			reportDate[0] = Number(reportDate[0]) - 1911;
+			this.inputs.serialNumber = reportDate.join("") + "02" + String(this.initPage).padStart(2, '0');	
 			//行政區
 			this.inputs.district = this.districtList[this.inputs.zipCode].name		
 		},
@@ -411,36 +410,26 @@ export default {
 		},
 		storeData(){
 			this.loading = true;
-			let imgObj = {}; 
-			let inputs = JSON.parse(JSON.stringify(this.inputs));
-
-			Object.keys(this.inputs).forEach(key => {
-				if(key.includes('Img')) {
-					imgObj[key] = this.inputs[key];
-					inputs[key] = "";
-				}
-			})
-
+			const inputs = JSON.parse(JSON.stringify(this.inputs));
 			const storedContent = {
 				initPage: this.initPage,
 				inputs
 			}
-			// console.log(storedContent, imgObj);
+			const perfItems = [
+				{
+					"reportId": this.listQuery.reportId,
+					"perfItem": 302,
+					"perfAtt": [ 2 ],
+					"perfPages": [ this.inputs.caseList.length ]
+				}
+			]
+			let uploadForm = new FormData();
+			uploadForm.append('checkDate', moment(this.checkDate).format("YYYY-MM-DD"));
+			uploadForm.append('pageCount', this.pdfDoc.internal.getNumberOfPages());
+			uploadForm.append('content', JSON.stringify(storedContent));
+			uploadForm.append('perfItems', JSON.stringify(perfItems));
 
-			setPerfContent(this.listQuery.perfContentId,{
-				checkDate: moment(this.checkDate).format("YYYY-MM-DD"),
-				pageCount: this.pdfDoc.internal.getNumberOfPages(),
-				content: JSON.stringify(storedContent),
-				imgObj,
-				perfItems: [
-					{
-						"reportId": this.listQuery.reportId,
-						"perfItem": 302,
-						"perfAtt": [ 2 ],
-						"perfPages": [ this.inputs.caseList.length ]
-					}
-				]
-			}).then(response => {
+			setPerfContent(this.listQuery.perfContentId, uploadForm).then(response => {
 				if ( response.statusCode == 20000 ) {
 					this.$message({
 						message: "提交成功",
@@ -493,12 +482,10 @@ export default {
 			}
 		},
 		formatDate(date) {
-			const momentDate = moment(date);
-			return momentDate.isValid() ? momentDate.utc().format('YYYY-MM-DD') : "-";
+			return moment(date).isValid() ? moment(date).format('YYYY-MM-DD') : "-";
 		},
 		formatTime(time) {
-			const momentTime = moment(time);
-			return momentTime.isValid() ? momentTime.utc().format('YYYY-MM-DD HH:mm') : "-";
+			return moment(time).isValid() ? moment(time).format('YYYY-MM-DD HH:mm') : "-";
 		}
 	}
 }

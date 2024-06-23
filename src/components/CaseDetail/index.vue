@@ -82,7 +82,7 @@ export default {
 			type: Boolean
 		},
 		deviceTypeNow: {
-			required: true,
+			default: 0,
 			type: Number
 		}
 	},
@@ -100,13 +100,13 @@ export default {
 					name: "系統編號",
 				},
 				CaseSN: {
-					name: "申請單號",
+					name: "通報單號",
 				},
 				// paperkind: {
-				// 	name: "申請單類別",
+				// 	name: "通報單類別",
 				// },
 				// run1tflag: {
-				// 	name: "申請單流程",
+				// 	name: "通報單流程",
 				// },
 				TBName: {
 					name: "區別",
@@ -114,9 +114,9 @@ export default {
 				Postal_vil: {
 					name: "里別",
 				},
-				CaseSucc: {
-					name: "通報單號",
-				},
+				// CaseSucc: {
+				// 	name: "通報單號",
+				// },
 				CaseNo: {
 					name: "案件編號",
 				},
@@ -176,16 +176,16 @@ export default {
 					3: "重度"
 				},
 				paperkind: {
-					1: "銑鋪申請單",
-					2: "設施申請單",
-					3: "標線申請單",
+					1: "銑鋪通報單",
+					2: "設施通報單",
+					3: "標線通報單",
 					4: "坑洞臨補單",
 					5: "分隊交辦案件",
-					6: "塗佈申請單"
+					6: "塗佈通報單"
 				},
 				run1tflag: {
 					0: "未送件",
-					"s": "未印申請單",
+					"s": "未印通報單",
 					"a": "組長審核",
 					"b": "主任審核",
 					"c": "主任抽件",
@@ -196,7 +196,7 @@ export default {
 					1: "分隊抽件",
 					2: "隊部抽件",
 					3: "分隊交辦",
-					4: "已完成申請單"  
+					4: "已完成通報單"  
 				},
 				workmemo: {
 					"uStacker": "堆高機",
@@ -264,7 +264,7 @@ export default {
 			// console.log(row);
 			this.detail = [];
 			this.otherImage = [];
-			let deviceType = this.deviceTypeNow;
+			let deviceType = this.deviceTypeNow || row.DeviceType;
 
 			// 補繪標線查詢原始案件
 			if(deviceType == 4) {

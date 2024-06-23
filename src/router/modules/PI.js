@@ -10,8 +10,7 @@ const PIRouter = {
 	meta: {
 		title: '成效指標',
 		icon: 'el-icon-s-check',
-		roles: ['PIcase'],
-		isNew: true
+		roles: ['PIcase']
 	},
 	children: [
 		{
@@ -23,8 +22,7 @@ const PIRouter = {
 			redirect: '/PIIndex/caseCheck/caseList',
 			meta: {
 				title: '案件稽核',
-				roles: ['PIcase.viewer', 'PIcase.inspector', 'PIcase.supervisor', 'PIcase.editor'],
-				isNew: true
+				roles: ['PIcase.viewer', 'PIcase.inspector', 'PIcase.supervisor', 'PIcase.editor']
 			},
 			children: [
 				{

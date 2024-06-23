@@ -62,18 +62,87 @@ export function getTaskReal(query) {
 }
 
 //---------------------------------------
-// 案件通報
-export function getInform(query) {
+// 養護判核
+export function getApply(query) {
 	return request({
-		url: '/dispatch/inform',
+		url: '/dispatch/apply',
 		method: 'get',
 		params: query
 	})
 }
 
+export function confirmApply(data) {
+	return request({
+		url: '/dispatch/apply',
+		method: 'post',
+		data
+	})
+}
+
+// 判核單列表
+export function getApplyTicketList(query) {
+	return request({
+		url: '/dispatch/applyTicketList',
+		method: 'get',
+		params: query
+	})
+}
+
+export function setApplyTicketList(id, data) {
+	return request({
+		url: `/dispatch/applyTicketList/${id}`,
+		method: 'put',
+		data
+	})
+}
+
+// 通報單列表PDF
+export function getApplyTicketListPDF(query) {
+	return request({
+		url: '/dispatch/applyTicketListPDF',
+		method: 'get',
+		params: query
+	})
+}
+
+// 分工判核
+export function getApplyReviewList(query) {
+	return request({
+		url: '/dispatch/applyReview',
+		method: 'get',
+		params: query
+	})
+}
+
+//---------------------------------------
+// 養護通報
+export function getApplyInform(query) {
+	return request({
+		url: '/dispatch/applyInform',
+		method: 'get',
+		params: query
+	})
+}
+
+export function getInformTicketList(query) {
+	return request({
+		url: '/dispatch/informTicketList',
+		method: 'get',
+		params: query
+	})
+}
+
+export function setinformTicketList(id, data) {
+	return request({
+		url: `/dispatch/informTicketList/${id}`,
+		method: 'put',
+		data
+	})
+}
+
 export function confirmInform(data) {
 	return request({
-		url: '/dispatch/inform',
+		url: '/dispatch/applyInform',
 		method: 'post',
 		data
 	})

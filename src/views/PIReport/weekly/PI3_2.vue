@@ -301,13 +301,15 @@ export default {
 		setPDFinputs() {
 			// console.log('setPDFinputs');
 			//工程名稱
-			const reportDate = moment(this.reportDate).subtract(1911, 'year');
+			const reportDate = moment(this.reportDate).format("YYYY/MM/DD").split("/");
+			reportDate[0] = Number(reportDate[0]) - 1911;
 			this.inputs.contractName = this.districtList[this.inputs.zipCode].tenderName;
 			//紀錄編號
-			this.inputs.serialNumber = reportDate.format("YYYYMMDD02").slice(1) + String(this.initPage).padStart(2, '0');	
+			this.inputs.serialNumber = reportDate.join("") + "02" + String(this.initPage).padStart(2, '0');	
 			//檢查日期
-			const checkDate = moment(this.checkDate).subtract(1911, 'year');
-			this.inputs.date = checkDate.format("YYYY年MM月DD日").slice(1);
+			const checkDate = moment(this.checkDate).format("YYYY/MM/DD").split("/");
+			checkDate[0] = Number(checkDate[0]) - 1911;
+			this.inputs.date = `${checkDate[0]}年${checkDate[1]}月${checkDate[2]}日`;
 			//案件數
 			this.inputForm.Hr1_Num32 = this.inputForm.Hr4_Num32 = this.inputForm.Day15_Num32 = this.inputForm.Day45_Num32 = this.inputForm.Day2_Num32 = this.inputForm.sumCompleteMaintain_Num32 = this.inputForm.companyCheck_Num32 = this.inputForm.maintainAll_Num32;
 			for(const key of [ 'maintainAll_Num32', 'Hr1_Num32', 'Hr4_Num32', 'Day15_Num32_hole', 'Day15_Num32_AC', 'Day45_Num32_FA', 'Day2_Num32', 'sumCompleteMaintain_Num32', 'failTime_Num32', 'companyCheck_Num32']) this.inputs[key] = String(this.inputForm[key]);
@@ -350,15 +352,17 @@ export default {
 		},
 		storeData(){
 			this.loading = true;
+			const inputs = JSON.parse(JSON.stringify(this.inputs));
 			const storedContent = {
 				initPage: this.initPage,
-				inputs: this.inputs
+				inputs
 			}
-			setPerfContent(this.listQuery.perfContentId, {
-				checkDate: moment(this.checkDate).format("YYYY-MM-DD"),
-				pageCount: 1,
-				content: JSON.stringify(storedContent)
-			}).then(response => {
+			let uploadForm = new FormData();
+			uploadForm.append('checkDate', moment(this.checkDate).format("YYYY-MM-DD"));
+			uploadForm.append('pageCount', 1);
+			uploadForm.append('content', JSON.stringify(storedContent));
+
+			setPerfContent(this.listQuery.perfContentId, uploadForm).then(response => {
 				if ( response.statusCode == 20000 ) {
 					this.$message({
 						message: "提交成功",
@@ -428,8 +432,7 @@ export default {
 			}
 		},
 		formatDate(date){
-			const momentDate = moment(date);
-			return momentDate.isValid() ? momentDate.format('YYYY-MM-DD') : "-";
+			return moment(date).isValid() ? moment(date).format('YYYY-MM-DD') : "-";
 		}
 	},
 };

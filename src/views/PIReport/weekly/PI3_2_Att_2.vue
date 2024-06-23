@@ -505,17 +505,17 @@ export default {
 			return new Promise(async resolve=> {
 				if(['caseNumber', 'completeFixed_Text', 'construction_Text'].includes(arg.key)) this.inputForm[arg.key] = arg.value;
 				if(['checkReportDate', 'receivedDate', 'actualCompleteS1', 'expectedCompleteT', 'actualCompleteT', ].includes(arg.key)) {
-					const dateTime = moment(arg.value);
-					this.inputForm[arg.key] = dateTime.isValid() 
-						? dateTime.add(1911, 'year').format("YYYY/MM/DD HH:mm:ss")
-						: '';
+					if(moment(arg.value).isValid()) {
+						const dateArr = arg.value.split("/");
+						this.inputForm[arg.key] = `${Number(dateArr[0]) + 1911}/${dateArr[1]}/${dateArr[2]}`;
+					} else this.inputForm[arg.key] = '';
 				}
 
 				const aspectRatioImgList = [];
 				if(['checkReportData_Img', 'dispatchData_Img', 'completeReportData_Img', 'reportData1999_Img',  'preconstruction_Img', 'completeFixed_Img', 'construction_Img'].includes(arg.key)) {
 					if(arg.value != undefined) {
 						this.inputs[arg.key] = this.inputForm[arg.key] = arg.value;
-						aspectRatioImgList.push(this.aspectRatioImg(arg));
+						if(arg.value && arg.value.length != 0) aspectRatioImgList.push(this.aspectRatioImg(arg));
 					}
 				}
 				await Promise.all(aspectRatioImgList);
@@ -598,7 +598,17 @@ export default {
 
 				const img = new Image();
 				img.onload = () => {
-					// console.log(img.width, img.height);
+					// 照片壓縮
+					// const canvas = document.createElement('canvas');
+					// // console.log("image: ", img.width, img.height);
+					// const scale = Math.max(img.width, img.height) >= 1024 ? 1024/Math.max(img.width, img.height) : 1;
+					// canvas.width = img.width * scale;
+					// canvas.height = img.height * scale;
+					// const canvasContext = canvas.getContext('2d');
+					// canvasContext.drawImage(img, 0, 0, canvas.width, canvas.height);
+					// this.inputs[arg.key] = canvas.toDataURL("image/jpeg", 0.8);
+					
+					// 調整比例
 					const templateWidth = this.template.schemas[keyIndex][arg.key].width;
 					const templateHeight = this.template.schemas[keyIndex][arg.key].height;
 					const ratio = Math.min(templateWidth / img.width, templateHeight / img.height);
@@ -613,22 +623,25 @@ export default {
 
 					resolve();
 				}
-				img.src = arg.value;
+
 				if(arg.value.length == 0) resolve();
+				else img.src = arg.value;
 			})
 		},
 		async setPDFinputs() {
 			return new Promise(async resolve=> {
 				//工程名稱
-				const reportDate = moment(this.reportDate).subtract(1911, 'year');
+				const reportDate = moment(this.reportDate).format("YYYY/MM/DD").split("/");
+				reportDate[0] = Number(reportDate[0]) - 1911;
 				this.inputs.contractName = this.districtList[this.inputs.zipCode].tenderName;
 				//紀錄編號
-				this.inputs.serialNumber1 = reportDate.format("YYYYMMDD02").slice(1) + String(this.initPage).padStart(2, '0');	
-				this.inputs.serialNumber2 = reportDate.format("YYYYMMDD02").slice(1) + String(this.initPage).padStart(2, '0') + "-1";	
-				this.inputs.serialNumber3 = reportDate.format("YYYYMMDD02").slice(1) + String(this.initPage+1).padStart(2, '0');	
+				this.inputs.serialNumber1 = reportDate.join("") + "02" + String(this.initPage).padStart(2, '0');	
+				this.inputs.serialNumber2 = reportDate.join("") + "02" + String(this.initPage).padStart(2, '0') + "-1";	
+				this.inputs.serialNumber3 = reportDate.join("") + "02" + String(this.initPage+1).padStart(2, '0');	
 				//檢查日期
-				const checkDate = moment(this.checkDate).subtract(1911, 'year');
-				this.inputs.date = checkDate.format("YYYY年MM月DD日").slice(1);
+				const checkDate = moment(this.checkDate).format("YYYY/MM/DD").split("/");
+				checkDate[0] = Number(checkDate[0]) - 1911;
+				this.inputs.date = `${checkDate[0]}年${checkDate[1]}月${checkDate[2]}日`;
 				//查報來源
 				this.inputs.distressSrc_Text = (this.inputs.distressSrc == '1') ? '自主' : (this.inputs.distressSrc == '2') ? '隊部' : '';
 
@@ -638,9 +651,11 @@ export default {
 
 				for(const key of ['checkReportDate',  'receivedDate', 'actualCompleteS1', 'expectedCompleteT', 'actualCompleteT']) {
 					const dateTime = moment(this.inputForm[key]);
-					this.inputs[key] = dateTime.isValid() 
-						? dateTime.subtract(1911, 'year').format("YYYY/MM/DD HH:mm").slice(1)
-						: '';
+					if(dateTime.isValid()) {
+						const dateTimeArr = dateTime.format("YYYY/MM/DD HH:mm").split("/");
+						dateTimeArr[0] = Number(dateTimeArr[0]) - 1911;
+						this.inputs[key] = dateTimeArr.join("/");
+					} else this.inputs[key] = '';
 				}
 
 				const aspectRatioImgList = [];
@@ -664,10 +679,10 @@ export default {
 				this.caseList = [];
 
 				let timeStart = moment(this.reportDate).day() == 0 
-					? moment(this.reportDate).day(-6).format("YYYY-MM-DD") 
-					: moment(this.reportDate).day(1).format("YYYY-MM-DD");
-				if(moment(timeStart).month() != moment(this.reportDate).month()) timeStart = moment(this.reportDate).startOf('month').format("YYYY-MM-DD");
-				const timeEnd = moment(this.reportDate).add(1, "d").format("YYYY-MM-DD");
+					? moment(this.reportDate).day(-6).subtract(8, 'hours').format("YYYY-MM-DD HH:mm:ss") 
+					: moment(this.reportDate).day(1).subtract(8, 'hours').format("YYYY-MM-DD HH:mm:ss");
+				if(moment(timeStart).month() != moment(this.reportDate).month()) timeStart = moment(this.reportDate).startOf('month').subtract(8, 'hours').format("YYYY-MM-DD HH:mm:ss");
+				const timeEnd = moment(this.reportDate).startOf('day').add(1, "d").subtract(8, 'hours').format("YYYY-MM-DD HH:mm:ss");
 
 				getCaseWarrantyList({
 					zipCode: Number(this.inputs.zipCode),
@@ -684,9 +699,9 @@ export default {
 					if(isReplace) {
 						const caseSpec = this.caseList[this.listQuery.perfPages-1];
 						this.inputForm.caseNumber = caseSpec.UploadCaseNo;
-						this.inputForm.checkReportDate = moment(caseSpec.CaseDate).utc().format("YYYY-MM-DD HH:mm:ss");
-						this.inputForm.expectedCompleteT = moment(caseSpec.DateDeadline).utc().format("YYYY-MM-DD HH:mm:ss");
-						this.inputForm.actualCompleteT = moment(caseSpec.DateCompleted).utc().format("YYYY-MM-DD HH:mm:ss");
+						this.inputForm.checkReportDate = moment(caseSpec.CaseDate).format("YYYY-MM-DD HH:mm:ss");
+						this.inputForm.expectedCompleteT = moment(caseSpec.DateDeadline).format("YYYY-MM-DD HH:mm:ss");
+						this.inputForm.actualCompleteT = moment(caseSpec.DateCompleted).format("YYYY-MM-DD HH:mm:ss");
 						this.inputs.distressSrc = caseSpec.DistressSrc.includes("1999") ? '3' : caseSpec.DistressSrc.includes("隊部") ? '2' : '1';
 						this.inputs.inspection = (caseSpec.State & 2) ? '1' : '0';
 					}
@@ -701,7 +716,7 @@ export default {
 		storeData(){
 			this.loading = true;
 			let imgObj = {}; 
-			let inputs = JSON.parse(JSON.stringify(this.inputs));
+			const inputs = JSON.parse(JSON.stringify(this.inputs));
 
 			Object.keys(this.inputs).forEach(key => {
 				if(key.includes('Img')) {
@@ -709,18 +724,18 @@ export default {
 					inputs[key] = "";
 				}
 			})
-			
 			const storedContent = {
 				initPage: this.initPage,
 				inputs: this.inputs
 			}
-			setPerfContent(this.listQuery.perfContentId, {
-				caseNo: Number(this.inputForm.caseNumber),
-				checkDate: moment(this.checkDate).format("YYYY-MM-DD"),
-				pageCount: ((['3'].includes(this.inputs.distressSrc)) ? 2 : 1) + (this.caseList.length == this.listQuery.perfPages ? 1 : 0),
-				content: JSON.stringify(storedContent),
-				imgObj
-			}).then(response => {
+			let uploadForm = new FormData();
+			uploadForm.append('caseNo', Number(this.inputForm.caseNumber));
+			uploadForm.append('checkDate', moment(this.checkDate).format("YYYY-MM-DD"));
+			uploadForm.append('pageCount', ((['3'].includes(this.inputs.distressSrc)) ? 2 : 1) + (this.caseList.length == this.listQuery.perfPages ? 1 : 0));
+			uploadForm.append('content', JSON.stringify(storedContent));
+			uploadForm.append('imgObj', JSON.stringify(imgObj));
+
+			setPerfContent(this.listQuery.perfContentId, uploadForm).then(response => {
 				if ( response.statusCode == 20000 ) {
 					this.$message({
 						message: "提交成功",
@@ -807,8 +822,7 @@ export default {
 			}
 		},
 		formatDate(date){
-			const momentDate = moment(date);
-			return momentDate.isValid() ? momentDate.format('YYYY-MM-DD') : "-";
+			return moment(date).isValid() ? moment(date).format('YYYY-MM-DD') : "-";
 		}
 	},
 };

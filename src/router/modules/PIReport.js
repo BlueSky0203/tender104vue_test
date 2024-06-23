@@ -10,8 +10,7 @@ const PIReportRouter = {
 	meta: {
 		title: '成效報表',
 		icon: 'el-icon-document',
-		roles: ['PIreport'],
-		isNew: true
+		roles: ['PIreport']
 	},
 	children: [
 		{
@@ -118,8 +117,7 @@ const PIReportRouter = {
 					meta: {
 						title: '週報表',
 						reportType: 2,
-						roles: ['PIreport.weekly'],
-						isNew: true
+						roles: ['PIreport.weekly']
 					}
 				},
 				{

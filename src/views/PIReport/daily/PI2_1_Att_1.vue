@@ -269,11 +269,19 @@ export default {
 								this.form.updateTemplate(this.template);
 							}
 
-							this.inputs[arg.key] = arg.value;
-
 							const img = new Image();
 							img.onload = () => {
-								// console.log(img.width, img.height);
+								// 照片壓縮
+								const canvas = document.createElement('canvas');
+								// console.log("image: ", img.width, img.height);
+								const scale = Math.max(img.width, img.height) >= 1024 ? 1024/Math.max(img.width, img.height) : 1;
+								canvas.width = img.width * scale;
+								canvas.height = img.height * scale;
+								const canvasContext = canvas.getContext('2d');
+								canvasContext.drawImage(img, 0, 0, canvas.width, canvas.height);
+								this.inputs[arg.key] = canvas.toDataURL("image/jpeg", 0.8);
+
+								// 調整比例
 								const templateWidth = this.template.schemas[0][arg.key].width;
 								const templateHeight = this.template.schemas[0][arg.key].height;
 								const ratio = Math.min(templateWidth / img.width, templateHeight / img.height);
@@ -303,16 +311,18 @@ export default {
 		},
 		setPDFinputs() {
 			//工程名稱
-			const reportDate = moment(this.reportDate).subtract(1911, 'year');
+			const reportDate = moment(this.reportDate).format("YYYY/MM/DD").split("/");
+			reportDate[0] = Number(reportDate[0]) - 1911;
 			this.inputs.district = this.districtList[this.inputs.zipCode].name;
 			this.inputs.contractName = this.districtList[this.inputs.zipCode].tenderName;
 			//紀錄編號
 			for(let i=0; i < this.template.schemas.length; i++) {
-				this.inputs[`serialNumber_21Att_${i+1}`] = reportDate.format("YYYYMMDD01").slice(1) + String(i+this.initPage).padStart(2, '0');
+				this.inputs[`serialNumber_21Att_${i+1}`] = reportDate.join("") + "01" + String(i+this.initPage).padStart(2, '0');
 			}
 			//檢查日期
-			const checkDate = moment(this.checkDate).subtract(1911, 'year');
-			this.inputs.date = checkDate.format("YYYY年MM月DD日").slice(1);
+			const checkDate = moment(this.checkDate).format("YYYY/MM/DD").split("/");
+			checkDate[0] = Number(checkDate[0]) - 1911;
+			this.inputs.date = `${checkDate[0]}年${checkDate[1]}月${checkDate[2]}日`;
 			//資料數轉換
 			let sum = 0
 			for(const key of [ 'ACTotal_Obs', 'ACTotal_Reg', 'facTotal_Obs', 'facTotal_Reg' ]) {
@@ -351,7 +361,7 @@ export default {
 		storeData(){
 			this.loading = true;
 			let imgObj = {}; 
-			let inputs = JSON.parse(JSON.stringify(this.inputs));
+			const inputs = JSON.parse(JSON.stringify(this.inputs));
 
 			Object.keys(this.inputs).forEach(key => {
 				if(key.includes('Img')) {
@@ -359,19 +369,17 @@ export default {
 					inputs[key] = "";
 				}
 			})
-
 			const storedContent = {
 				initPage: this.initPage,
 				inputs
 			}
-			// console.log(storedContent, imgObj);
+			let uploadForm = new FormData();
+			uploadForm.append('checkDate', moment(this.checkDate).format("YYYY-MM-DD"));
+			uploadForm.append('pageCount', 1);
+			uploadForm.append('content', JSON.stringify(storedContent));
+			uploadForm.append('imgObj', JSON.stringify(imgObj));
 
-			setPerfContent(this.listQuery.perfContentId, {
-				checkDate: moment(this.checkDate).format("YYYY-MM-DD"),
-				pageCount: 1,
-				content: JSON.stringify(storedContent),
-				imgObj
-			}).then(response => {
+			setPerfContent(this.listQuery.perfContentId, uploadForm).then(response => {
 				if ( response.statusCode == 20000 ) {
 					this.$message({
 						message: "提交成功",
@@ -440,8 +448,7 @@ export default {
 			}
 		},
 		formatDate(date){
-			const momentDate = moment(date);
-			return momentDate.isValid() ? momentDate.format('YYYY-MM-DD') : "-";
+			return moment(date).isValid() ? moment(date).format('YYYY-MM-DD') : "-";
 		}
 	}
 };

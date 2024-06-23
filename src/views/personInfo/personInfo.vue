@@ -7,9 +7,7 @@
 					<el-form :model="inputForm">
 						<div style="display:flex;justify-content:space-between;align-items: center">
 							<h3>檢核資訊</h3>
-							<el-button-group>
-								<el-button type="primary" plain icon="el-icon-document" size="small" @click="handleDownload()">輸出</el-button>
-							</el-button-group>
+							<el-button type="primary" plain icon="el-icon-document" size="small" @click="handleDownload()">輸出</el-button>
 						</div>
 						
 						<el-collapse v-model="activeNames">
@@ -67,11 +65,11 @@
 								</el-form-item>
 
 								<el-form-item label="婚姻狀況" :label-width="labelWidth1">
-									<el-radio-group v-model="radio1">
-										<el-radio v-model="radio1" :label="1" @change="handleRadioChange(1)">未婚</el-radio>
-										<el-radio v-model="radio1" :label="2" @change="handleRadioChange(2)">已婚</el-radio>
-										<!-- <el-radio v-model="inputForm.check_unmarried" @change="setPDFinputs" :label="1">未婚</el-radio>
-										<el-radio v-model="inputForm.check_married" @change="setPDFinputs" :label="2">已婚</el-radio> -->
+									<el-radio-group v-model="inputForm.check_married" @change="setPDFinputs">
+										<!-- <el-radio v-model="radio1" :label="1" @change="handleRadioChange(1)">未婚</el-radio>
+										<el-radio v-model="radio1" :label="2" @change="handleRadioChange(2)">已婚</el-radio> -->
+										<el-radio :label="1">未婚</el-radio>
+										<el-radio :label="2">已婚</el-radio>
 									</el-radio-group>
 								</el-form-item>
 
@@ -152,11 +150,11 @@
 								</el-form-item>
 
 								<el-form-item label="畢業狀況" :label-width="labelWidth1">
-									<el-radio-group v-model="radio2">
-										<el-radio v-model="radio2" :label="3" @change="handleRadioChange(3)">畢業</el-radio>
-										<el-radio v-model="radio2" :label="4" @change="handleRadioChange(4)">肄業</el-radio>
-										<!-- <el-radio v-model="inputForm.check_graduated" @change="setPDFinputs" :label="1">畢業</el-radio>
-										<el-radio v-model="inputForm.check_ungraduated" :label="2">肄業</el-radio> -->
+									<el-radio-group v-model="inputForm.check_graduated" @change="setPDFinputs">
+										<!-- <el-radio v-model="radio2" :label="3" @change="handleRadioChange(3)">畢業</el-radio>
+										<el-radio v-model="radio2" :label="4" @change="handleRadioChange(4)">肄業</el-radio> -->
+										<el-radio :label="1">畢業</el-radio>
+										<el-radio :label="2">肄業</el-radio>
 									</el-radio-group>
 								</el-form-item>
 
@@ -340,24 +338,19 @@ export default {
     return {
       inputs: {},
 
-			radio1: 'null',
-			radio2: 'null',
+			radio1: null,
+			radio2: null,
 			activeNames: '1',
 			labelHeight: '15px',
 			labelWidth1:'150px',
 			labelWidth2:'20px',
 			labelWidth3: '90px',
 			loading: true,
-			initPage: 1,
-			listQuery: {
-				reportId: 0,
-				perfContentId: null
-			},
 			dateTimePickerVisible: false,
 			pickerOptions: {
 				firstDayOfWeek: 1,
 			},
-			startDate: moment().startOf("d").subtract(1, "d"),
+			startDate: moment().startOf("d"),
 			birthDate: moment().startOf("d").subtract(1, "d"),
 			academicTermStart: moment().startOf("d").subtract(1, "d"),
 			academicTermEnd: moment().startOf("d").subtract(1, "d"),
@@ -368,17 +361,14 @@ export default {
 			issuedDate1: moment().startOf("d").subtract(1, "d"),
 			issuedDate2: moment().startOf("d").subtract(1, "d"),
 			issuedDate3: moment().startOf("d").subtract(1, "d"),
-			reportDate: null,
-			pageTurn: [-1, -1],
 			template: {},
 			inputForm: {
-				department: '',
+				department: '資訊部',
 				position: '',
 				name: '',
 				sex: '',
 				age: '',
 				id: '',
-				check_unmarried: false,
 				check_married: false,
 				homePhone: '',
 				phone: '',
@@ -396,7 +386,6 @@ export default {
 				companyName1: '',
 				companyName2: '',
 				check_graduated: false,
-				check_ungraduated: false,
 				reason1: '',
 				reason2: '',
 				check_word: false,
@@ -459,19 +448,19 @@ export default {
 				issuedDate1: '',
 				issuedDate2: '',
 				issuedDate3: '',
-				check_unmarried: 'V',
-				check_married: 'V',
-				check_graduated: 'V',
-				check_ungraduated: 'V',
-				check_word: 'V',
-				check_excel: 'V',
-				check_powerPoint: 'V',
-				check_otherSkill: 'V',
-				check_motor: 'V',
-				check_car: 'V',
-				check_taxi: 'V',
-				check_truck: 'V',
-				check_otherDriverLicense: 'V'
+				check_unmarried: '',
+				check_married: '',
+				check_graduated: '',
+				check_ungraduated: '',
+				check_word: '',
+				check_excel: '',
+				check_powerPoint: '',
+				check_otherSkill: '',
+				check_motor: '',
+				check_car: '',
+				check_taxi: '',
+				check_truck: '',
+				check_otherDriverLicense: ''
 			},
     }
   },
@@ -482,33 +471,24 @@ export default {
     this.initPDF(); 
   },
   methods: {
-    async initPDF() {
-			return new Promise(resolve => {
-				fetch(`/assets/pdf/personInfo.json?t=${Date.now()}`).then(async (response) => {
-					const domContainer = this.$refs.container.$el;
-					this.template = await response.json();
+    initPDF() {
+			fetch(`/assets/pdf/personInfo.json?t=${Date.now()}`).then(async (response) => {
+				const domContainer = this.$refs.container.$el;
+				this.template = await response.json();
 
-          // 讀取中文字
-					const font = {
-						edukai: {
-							data: await fetch('/assets/font/edukai-4.0.ttf').then(res => res.arrayBuffer()),
-							fallback: true
-						},
-						// NotoSansTC: {
-						// 	data: await fetch('/assets/font/NotoSansTC-Regular.ttf').then(res => res.arrayBuffer()),
-						// 	fallback: true
-						// }
-					};
+				// 讀取中文字
+				const font = {
+					edukai: {
+						data: await fetch('/assets/font/edukai-4.0.ttf').then(res => res.arrayBuffer()),
+						fallback: true
+					}
+				};
 
-					this.form = new Form({ domContainer, template: this.template, inputs: [ this.inputs ], options: { font } });
-					this.setPDFinputs();
-					
-					resolve();
-				})
+				this.form = new Form({ domContainer, template: this.template, inputs: [ this.inputs ], options: { font } });
+				this.setPDFinputs();
 			})
 		},
 		setPDFinputs() {
-			
 			const inputsData = [
 				'department',
 				'position',
@@ -549,7 +529,6 @@ export default {
 				this.inputs[data] = this.inputForm[data];
 			}
 			
-			//檢查日期 沒有做資料轉換
 			const startDate = moment(this.startDate)
 			const birthDate = moment(this.birthDate)
 			const academicTermStart = moment(this.academicTermStart)
@@ -573,11 +552,11 @@ export default {
 				this.inputs[i] = String(dateData[i].format("YYYY年MM月DD日"));
 			}
 
-			const academicTerm = String(`${academicTermStart.format("YYYY年MM月DD日")} - ${academicTermEnd.format("YYYY年MM月DD日")}`);
+			const academicTerm = String(`${academicTermStart.format("YYYY年MM月DD日")}-${academicTermEnd.format("YYYY年MM月DD日")}`);
 			this.inputs.academicTerm = academicTerm;
-			const employmentTerm1 = String(`${employmentTermStart1.format("YYYY年MM月DD日")} - ${employmentTermEnd1.format("YYYY年MM月DD日")}`);
+			const employmentTerm1 = String(`${employmentTermStart1.format("YYYY年MM月DD日")}-${employmentTermEnd1.format("YYYY年MM月DD日")}`);
 			this.inputs.employmentTerm1 = employmentTerm1;
-			const employmentTerm2 = String(`${employmentTermStart2.format("YYYY年MM月DD日")} - ${employmentTermEnd2.format("YYYY年MM月DD日")}`);
+			const employmentTerm2 = String(`${employmentTermStart2.format("YYYY年MM月DD日")}-${employmentTermEnd2.format("YYYY年MM月DD日")}`);
 			this.inputs.employmentTerm2 = employmentTerm2;
 
 			if (this.inputForm.companyName1 === '') {
@@ -600,10 +579,6 @@ export default {
 			
 			// checkBox
 			const checkingData = [
-				'check_unmarried',
-				'check_married',
-				'check_graduated',
-				'check_ungraduated',
 				'check_word',
 				'check_excel',
 				'check_powerPoint',
@@ -619,51 +594,24 @@ export default {
 				this.inputs[data] = this.inputForm[data] ? 'V' : '';
 			}
 
-			// if (this.radio1 === 2) {
-			// 	this.inputForm.check_unmarried = 'V';
-			// 	this.inputForm.check_married = '';
-			// } else if (this.radio1 === 1) {
-			// 	this.inputForm.check_unmarried = '';
-			// 	this.inputForm.check_married = 'V';
-			// }
-
-			// if (this.radio2 === 2) {
-			// 	this.inputForm.check_graduated = 'V';
-			// 	this.inputForm.check_ungraduated = '';
-			// } else if (this.radio2 === 1) {
-			// 	this.inputForm.check_graduated = '';
-			// 	this.inputForm.check_ungraduated = 'V';
-			// }
+			if (this.inputForm.check_married === 1) {
+				this.inputs.check_unmarried = 'V';
+				this.inputs.check_married = '';
+			} else if (this.inputForm.check_married === 2) {
+				this.inputs.check_unmarried = '';
+				this.inputs.check_married = 'V';
+			}
+			
+			if (this.inputForm.check_graduated === 1) {
+				this.inputs.check_graduated = 'V';
+				this.inputs.check_ungraduated = '';
+			} else if (this.inputForm.check_graduated === 2) {
+				this.inputs.check_graduated = '';
+				this.inputs.check_ungraduated = 'V';
+			}
 
 			this.form.setInputs([this.inputs]);
 			this.form.render();
-		},
-
-		handleRadioChange(value) {
-			if (value === 1) {
-				this.inputForm.check_unmarried = true;
-				this.inputForm.check_married = false;
-			} else if (value === 2) {
-				this.inputForm.check_unmarried = false;
-				this.inputForm.check_married = true;
-			}
-
-			if (value === 3) {
-				this.inputForm.check_graduated = true;
-				this.inputForm.check_ungraduated = false;
-			} else if (value === 4) {
-				this.inputForm.check_graduated = false;
-				this.inputForm.check_ungraduated = true;
-			}
-			this.setPDFinputs();
-		},
-		
-    async getPDF() {
-			return new Promise(resolve =>{
-				generate({ template: this.form.getTemplate(), inputs: this.form.getInputs(), options: { font: this.form.getFont() } }).then((pdf) => {
-					resolve(pdf);
-				});
-			});
 		},
 		handleDownload() {
 			// console.log(this.form);

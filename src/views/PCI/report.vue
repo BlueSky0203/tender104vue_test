@@ -265,7 +265,7 @@ export default {
 			return (index + 1) + (this.listQuery.pageCurrent - 1) * this.listQuery.pageSize;
 		},
 		formatTime(time) {
-			return moment(time).utc().format("YYYY-MM-DD");
+			return moment(time).format("YYYY-MM-DD");
 		},
 		async handleDownload() {
 			await this.dateWatcher();

@@ -389,7 +389,7 @@ export default {
 			this.chart.setOption(options);
 		},
 		formatTime(time) {
-			return moment(time).utc().format("YYYY-MM-DD");
+			return moment(time).format("YYYY-MM-DD");
 		},
 		formatContent(row, key) {
 			if(key == "typeId") return this.typeMap[row[key]];

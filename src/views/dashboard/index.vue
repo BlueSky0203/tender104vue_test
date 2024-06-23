@@ -34,3 +34,7 @@ export default {
   },
 };
 </script>
+<style lang="sass">
+.dashboard-container
+	height: calc(100vh - 50px)
+</style>

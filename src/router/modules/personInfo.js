@@ -1,13 +1,14 @@
 import Layout from '@/layout'
 
 const personInfoRouter = {
-  path: '/personInfo/personInfo',
+  path: '/personInfo',
   name: 'personalInformation',
+	redirect: 'noRedirect',
   component: Layout,
+	hidden: true,
   meta: {
     title: '人事資料表管理',
-    icon: 'el-icon-user',
-    roles: ['rAdm']
+    icon: 'el-icon-user'
   },
   children: [
     {
@@ -15,9 +16,9 @@ const personInfoRouter = {
       component: () => import('@/views/personInfo/personInfo'),
       name: 'personInfo',
       meta: {
-        title: '人事資料表',
-        roles: ['rAdm']
-      }
+        title: '人事資料表'
+      },
+			hidden: true
     }
   ]
 }

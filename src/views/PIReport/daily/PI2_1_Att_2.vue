@@ -74,7 +74,7 @@ import { jsPDF } from 'jspdf';
 import { applyPlugin } from 'jspdf-autotable';
 applyPlugin(jsPDF);
 import { Viewer, BLANK_PDF } from '@pdfme/ui';
-import { getCaseList, getPerfContent, setPerfContent } from "@/api/PI";
+import { getCaseList, getCaseCount, getPerfContent, setPerfContent } from "@/api/PI";
 import TimePicker from '@/components/TimePicker';
 import { dateWatcher } from "@/utils/pickerOptions";
 
@@ -175,14 +175,15 @@ export default {
 			inputs: {
 				companyName: '聖東營造股份有限公司',
 				formatDate:'',
-				dateYear:'',
 				zipCode: 104,
 				district: '中山區',
 				serialNumber1: '',
 				serialNumber2: '',
 				case1999Img: '',
 				listNo1999: [],
-				listUnreason: []
+				listUnreason: [],
+				AC1999: 0,
+				fac1999: 0
 			},
 			deviceType:{
 				1:'AC路面',
@@ -217,7 +218,7 @@ export default {
 	methods: {
 		async setData(perfContentId, initPage=0) {
 			return new Promise(resolve => {
-			getPerfContent({
+				getPerfContent({
 					contentId: perfContentId
 				}).then(async(response) => {
 					if (response.data.list.length == 0) {
@@ -304,15 +305,25 @@ export default {
 					zipCode: this.inputs.zipCode,
 					timeStart: startDate,
 					timeEnd: endDate
-				}).then(async (response) => {
+				}).then(response => {
 					if (response.data.list.length != 0) {
 						const list = response.data.list;
-						this.inputs.listNo1999 = list.filter(l => l.DistressSrc !== "1999交辦案件");
+						this.inputs.listNo1999 = list.filter(l => !l.DistressSrc.includes("1999"));
 						this.inputs.listUnreason = list.filter(l => (l.State & 16) && l.StateNotes.Firm !== '優於民眾查報');
 					}
-					await this.previewPdf()
-					resolve();
-					this.loading = false;
+
+					getCaseCount({
+						zipCode: Number(this.inputs.zipCode),
+						timeStart: startDate,
+						timeEnd: endDate
+					}).then(async (response) => {
+						this.inputs.AC1999 = Number(response.data.result.AC1999);
+						this.inputs.fac1999 = Number(response.data.result.fac1999);
+
+						await this.previewPdf()
+						resolve();
+						this.loading = false;
+					}).catch(err => this.loading = false);
 				}).catch(err => { this.loading = false; });
 			})
 		},
@@ -322,12 +333,24 @@ export default {
 			const reader = new FileReader();
 			reader.readAsDataURL(file.raw);
 			reader.onloadend = (evt) => {
-				this.imgList = [{
-					url: evt.target.result
-				}];
-				this.inputs.case1999Img = evt.target.result;
+				const img = new Image();
+				img.onload = () => {
+					const canvas = document.createElement('canvas');
+					// console.log("image: ", img.width, img.height);
+					const scale = Math.max(img.width, img.height) >= 1024 ? 1024/Math.max(img.width, img.height) : 1;
+					canvas.width = img.width * scale;
+					canvas.height = img.height * scale;
+					// console.log("canvas: ", canvas.width, canvas.height);
+					const canvasContext = canvas.getContext('2d');
+					canvasContext.drawImage(img, 0, 0, canvas.width, canvas.height);
+					const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
 
-				this.previewPdf();
+					this.imgList = [{ url: dataUrl }];
+					this.inputs.case1999Img = dataUrl;
+
+					this.previewPdf();
+				}
+				img.src = evt.target.result;
 			};
 		},
 		handleRemove(file, fileList) {
@@ -437,7 +460,7 @@ export default {
 				this.pdfDoc.autoTable({
 					theme: 'plain',
 					styles: { font: "edukai", fontSize: 12, lineWidth: 0.1, lineColor: 10 },
-					head: [['當日被通報案件(1999)']],
+					head: [[`當日被通報案件(1999) (AC路面: ${this.inputs.AC1999 || 0}件、人行道: ${this.inputs.fac1999 || 0}件)`]],
 					startY: this.pdfDoc.lastAutoTable.finalY,
 				})
 				this.pdfDoc.autoTable({
@@ -498,15 +521,16 @@ export default {
 		},
 		formatFormData(){
 			//日期格式
-			const checkDate = moment(this.checkDate).subtract(1911, 'year');
-			this.inputs.formatDate = checkDate.format("YYYY年MM月DD日").slice(1);
+			const checkDate = moment(this.checkDate).format("YYYY/MM/DD").split("/");
+			checkDate[0] = Number(checkDate[0]) - 1911;
+			this.inputs.formatDate = `${checkDate[0]}年${checkDate[1]}月${checkDate[2]}日`;
 			
-			const reportDate = moment(this.reportDate).subtract(1911, 'year');
-			//民國年份
-			this.inputs.dateYear = reportDate.year()
+			const reportDate = moment(this.reportDate).format("YYYY/MM/DD").split("/");
+			reportDate[0] = Number(reportDate[0]) - 1911;
+
 			//紀錄編號
-			this.inputs.serialNumber1 = reportDate.format("YYYYMMDD01").slice(1) + String(this.initPage).padStart(2, '0');
-			this.inputs.serialNumber2 = reportDate.format("YYYYMMDD01").slice(1) + String(this.initPage+1).padStart(2, '0');		
+			this.inputs.serialNumber1 = reportDate.join("") + "01" + String(this.initPage).padStart(2, '0');
+			this.inputs.serialNumber2 = reportDate.join("") + "01" + String(this.initPage+1).padStart(2, '0');		
 			//行政區
 			this.inputs.district = this.districtList[this.inputs.zipCode].name		
 		},
@@ -530,7 +554,7 @@ export default {
 		storeData(){
 			this.loading = true;
 			let imgObj = {}; 
-			let inputs = JSON.parse(JSON.stringify(this.inputs));
+			const inputs = JSON.parse(JSON.stringify(this.inputs));
 
 			Object.keys(this.inputs).forEach(key => {
 				if(key.includes('Img')) {
@@ -538,20 +562,17 @@ export default {
 					inputs[key] = "";
 				}
 			})
-
-
 			const storedContent = {
 				initPage: this.initPage,
 				inputs
 			}
-			// console.log(storedContent, imgObj);
+			let uploadForm = new FormData();
+			uploadForm.append('checkDate', moment(this.checkDate).format("YYYY-MM-DD"));
+			uploadForm.append('pageCount', this.pdfDoc.internal.getNumberOfPages());
+			uploadForm.append('content', JSON.stringify(storedContent));
+			uploadForm.append('imgObj', JSON.stringify(imgObj));
 
-			setPerfContent(this.listQuery.perfContentId,{
-				checkDate: moment(this.checkDate).format("YYYY-MM-DD"),
-				pageCount: this.pdfDoc.internal.getNumberOfPages(),
-				content: JSON.stringify(storedContent),
-				imgObj
-			}).then(response => {
+			setPerfContent(this.listQuery.perfContentId, uploadForm).then(response => {
 				if ( response.statusCode == 20000 ) {
 					this.$message({
 						message: "提交成功",
@@ -602,8 +623,7 @@ export default {
 			}
 		},
 		formatDate(date){
-			const momentDate = moment(date);
-			return momentDate.isValid() ? momentDate.format('YYYY-MM-DD') : "-";
+			return moment(date).isValid() ? moment(date).format('YYYY-MM-DD') : "-";
 		}
 	}
 }

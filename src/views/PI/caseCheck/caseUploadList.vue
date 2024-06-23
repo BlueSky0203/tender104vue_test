@@ -279,7 +279,9 @@ export default {
 		delCase(opType) {
 			this.$confirm(`<p>確定刪除${this.searchDateNow} 共${this.list.length}件案件? <br/>(刪除後案件列表將<span style="color: #F56C6C">無法恢復</span>。)</p>`, "確認", { dangerouslyUseHTMLString: true, showClose: false }).then(() => {
 				delCaseList( 0, {
+					zipCode: this.listQuery.zipCode,
 					opType,
+					caseType: this.listQuery.caseType,
 					timeStart: this.searchDateNow,
 					timeEnd: moment(this.searchDateNow).add(1, "d").format("YYYY-MM-DD")
 				}).then(response => {

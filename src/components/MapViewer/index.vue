@@ -109,6 +109,7 @@ export default {
 				streetViewControl: false,
 				rotateControl: false,
 				tilt: 0,
+				gestureHandling: 'greedy',
 				styles: [
 					{
 						stylers: [{ visibility: "on" }],

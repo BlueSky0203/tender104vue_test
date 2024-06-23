@@ -348,6 +348,12 @@ export default {
 			if(this.checkDateWarranty){
 				this.tableSelect.forEach(l => l.State = l.CaseType.reduce((acc, cur) => (acc +=cur)));
 				const caseList = JSON.parse(JSON.stringify(this.caseFilterList(this.tableSelect)));
+				caseList.forEach(caseSpec => {
+					caseSpec.CaseDate = moment(caseSpec.CaseDate).isValid() ? moment(caseSpec.CaseDate).utc().format("YYYY/MM/DD HH:mm:ss") : "";
+					caseSpec.DateDeadline = moment(caseSpec.DateDeadline).isValid() ? moment(caseSpec.DateDeadline).utc().format("YYYY/MM/DD HH:mm:ss") : "";
+					caseSpec.DateCompleted = moment(caseSpec.DateCompleted).isValid() ? moment(caseSpec.DateCompleted).utc().format("YYYY/MM/DD HH:mm:ss") : "";
+					caseSpec.DateWarranty = moment(caseSpec.DateWarranty).isValid() ? moment(caseSpec.DateWarranty).utc().format("YYYY/MM/DD HH:mm:ss") : "";
+				})
 				
 				addCaseWarrantyList({
 					zipCode: this.listQuery.zipCode,
@@ -413,7 +419,9 @@ export default {
 			if(time == "Invalid date"){
 				return
 			}else{
-				return moment(time).subtract(1911, 'year').format("YYYY/MM/DD").replace(/^0/g, "");
+				const formatTime = moment(time).format("YYYY/MM/DD").split("/");
+				formatTime[0] = Number(formatTime[0]) - 1911;
+				return formatTime.join("/");
 			}
 		},
 		readCSV(file, fileList) {
@@ -506,7 +514,10 @@ export default {
 				return headers.reduce((object, header, index) => {
 					if([ "查報日期", "預計完工日期", "實際完工時間" ].includes(header)){
 						if(values[index]=="") object[header] = ""
-						else object[header] = moment(values[index]).add(1911, 'year').format("YYYY/MM/DD HH:mm:ss");
+						else {
+							const dateArr = values[index].split("/");
+							object[header] = `${Number(dateArr[0])+1911}/${dateArr[1]}/${dateArr[2]}`;
+						}
 					} 
 					else{
 						object[header] = values[index]; 
@@ -533,9 +544,9 @@ export default {
 		},
 		//案件上傳之日期選擇器相關方法
 		formattedDate(row){
-			const formattedDate = moment(row.DateCompleted).subtract(1911, 'year').format("YYYY/MM/DD").replace(/^0/g, "");
-			// console.log(formattedDate)
-			return formattedDate
+			const formatTime = moment(row.DateCompleted).format("YYYY/MM/DD").split("/");
+			formatTime[0] = Number(formatTime[0]) - 1911;
+			return formatTime.join("/");
 		},
 		computedWarranty(row){
 			if(['坑洞', '人孔高差'].includes(row.DistressType)) row.DateWarranty = moment(row.DateCompleted).add(13, 'day').format("YYYY/MM/DD");

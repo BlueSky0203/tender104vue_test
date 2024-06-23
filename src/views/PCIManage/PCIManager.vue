@@ -1,6 +1,6 @@
 <template>
 	<div class="app-container PCI-Manager" v-loading="loading">
-		<h2>合約管理</h2>
+		<h2>PCI計算</h2>
 		<div class="filter-container">
 			<div class="filter-item">
 				<div class="filter-item">
@@ -63,13 +63,8 @@
 					<span v-else style="color: #F56C6C">已封存 <br> ({{ formatTime(row.archiveTime) }})</span>
 				</template>
 			</el-table-column>
-			<el-table-column v-if="listQuery.tenderId > 1001" :key="listQuery.tenderId" label="上傳至新工" width="80" align="center">
-				<template slot-scope="{ row }">
-					<el-button class="btn-action" type="warning" plain :disabled="isUpload" @click="uploadCase2NCO(row)">上傳</el-button>
-				</template>
-			</el-table-column>
 			<el-table-column label="PCI計算" align="center" >
-				<el-table-column v-if="checkPermission(['rAdm'])" label="即時運算" align="center" width='120'>
+				<el-table-column v-if="checkPermission(['PCIManage.master'])" label="即時運算" align="center" width='120'>
 					<template slot-scope="{ row }">
 						<el-button-group v-if="!row.archiveTime">
 							<el-button class="btn-action" type="primary" plain @click="calPCI(row.id, 0)">重算</el-button>
@@ -116,11 +111,12 @@
 				</el-table-column>
 			</el-table-column>
 
-			<el-table-column v-if="listQuery.tenderId > 1001" :key="listQuery.tenderId" label="缺失匯入" width="120" align="center">
+			<el-table-column v-if="listQuery.tenderId > 1001" :key="listQuery.tenderId" label="缺失匯入" width="140" align="center">
 				<template slot-scope="{ row }">
 					<el-button-group v-if="!row.edit">
-						<el-button class="btn-action" type="primary" plain :disabled="isUpload" @click="uploadCase(row, 1)">通報</el-button>
-						<el-button class="btn-action" type="warning" plain :disabled="isUpload" @click="uploadCase(row, 2)">PCI</el-button>
+						<el-button class="btn-action" type="info" plain :disabled="isUpload" @click="uploadCase(row, 1, true)">重點</el-button>
+						<el-button class="btn-action" type="primary" plain :disabled="isUpload" @click="uploadCase(row, 1, false)">通報</el-button>
+						<el-button class="btn-action" type="warning" plain :disabled="isUpload" @click="uploadCase(row, 2, false)">PCI</el-button>
 					</el-button-group>
 				</template>
 			</el-table-column>
@@ -153,7 +149,7 @@
 import moment from "moment";
 import { getTenderMap, getTenderRound, addTenderRound, setTenderRound, archiveTenderRound } from "@/api/type";
 import { resetPCI, updatePCI, updatePCIByName } from "@/api/tool";
-import { importAllInspectCase,  uploadInspectionCaseNco } from "@/api/inspection";
+import { importAllInspectCase } from "@/api/inspection";
 import checkPermission from '@/utils/permission';
 
 export default {
@@ -369,7 +365,7 @@ export default {
 				}).catch(err => console.log(err))
 			}
 		},
-		uploadCase(row, targetType) {
+		uploadCase(row, targetType, isSub = false) {
 			const content = `確定上傳缺失至「${targetType == 1 ? '追蹤列表' : '缺失列表'}」?`;
 			this.$confirm(content, "確認", { showClose: false }).then(() => {
 				this.loading = true;
@@ -377,42 +373,13 @@ export default {
 
 				importAllInspectCase({
 					surveyId: row.id,
-					targetType
+					targetType,
+					isSub
 				}).then(response => {
 					if ( response.statusCode == 20000 ) {
 						const result = response.result;
 						this.$message({
-							message: `上傳缺失結果(共 ${result.total}件): 成功 ${result.success}件 / 重複 ${result.duplicate}件`,
-							type: "success",
-						});
-					} 
-					this.getList();
-					this.isUpload = false;
-					this.loading = false;
-				}).catch(err => {
-					console.log(err);
-					this.loading = false;
-					this.isUpload = false;
-				})
-
-			}).catch(err => {
-				console.log(err);
-			});
-
-		},
-		uploadCase2NCO(row) {
-			const content = `確定上傳缺失至「新工處」?`;
-			this.$confirm(content, "確認", { showClose: false }).then(() => {
-				this.loading = true;
-				this.isUpload = true;
-
-				uploadInspectionCaseNco({
-					surveyId: row.id
-				}).then(response => {
-					if ( response.statusCode == 20000 ) {
-						const result = response.result;
-						this.$message({
-							message: `上傳缺失結果(共 ${result.total}件): 成功 ${result.success}件 / 失敗 ${result.fail}件 / 重複 ${result.duplicate}件`,
+							message: `上傳缺失結果(共 ${result.total}件): 成功 ${result.success}件 / 重複 ${result.duplicate}件 / 地址錯誤 ${result.addrFail}件`,
 							type: "success",
 						});
 					} 
@@ -435,7 +402,7 @@ export default {
 			else return row[column.property] || "-";
 		},
 		formatTime(time) {
-			return moment(time).utc().format("YYYY-MM-DD");
+			return moment(time).format("YYYY-MM-DD");
 		}
 	},
 };

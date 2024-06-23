@@ -1,10 +1,19 @@
 <template>
 	<div class="car-route" v-loading="loading"> 
 		<div class="header-bar">
-			<h2 class="route-title">車巡管理
+			<h2 class="route-title">巡視路線(車輛)
 				<!-- <span v-if="carId.length != 0" class="route-info">車號 {{ carId }} (路線 {{ listQuery.inspectionId }})</span> -->
 				<span v-if="carId.length != 0" class="route-info">{{ searchRange }}</span>
 			</h2>
+			<el-card v-if="caseInfo.length != 0" class="info-box" shadow="never">
+				<el-row v-for="(info, index) in caseInfo" :key="`caseInfo_${info.showName}_${index}`" class="color-box" type="flex" :style="`background-color: ${info.active ? info.color : '#eee'}; cursor: pointer`" @click.native="info.active = !info.active; caseFilter();">
+					<el-col :span="5"><el-image :src="info.icon" fit="scale-down" style="height: 30px" /></el-col>
+					<el-col :span="12" style="padding: 0 5px">{{ info.showName || info.caseName }}</el-col>
+					<el-col :span="5">
+						<span>{{ info.total }}</span>
+					</el-col>
+				</el-row>
+			</el-card>
 			<div class="filter-container">
 				<span class="filter-item" style="display: inline-flex">
 					<el-button :type="showLayerAttach ? 'primary' : 'info'" @click="showLayerAttach = !showLayerAttach">路線圖層</el-button>
@@ -37,11 +46,12 @@
 					</el-card>
 				</span>
 				<br>
-				<el-select v-model="listQuery.contractId" placeholder="請選擇">
+				<el-select v-model="listQuery.contractId" placeholder="請選擇" style="width: 100px;">
+					<el-option label="全部" :value="99" />
 					<el-option v-for="(text, id) in options.contractId" :key="`contractId_${id}`" :label="text" :value="Number(id)" />
 				</el-select>
 
-				<el-select v-model="listQuery.carId" placeholder="請選擇" @change="getCarList()">
+				<el-select v-if="listQuery.contractId != 99" v-model="listQuery.carId" placeholder="請選擇" style="width: 160px;"  @change="getCarList()">
 					<el-option v-for="(text, id) in options.carId[listQuery.contractId]" :key="`car_${id}`" :label="text" :value="Number(id)" />
 				</el-select> 
 
@@ -81,13 +91,18 @@
 						size="mini"
 						@click="dateTimePickerVisible = !dateTimePickerVisible"
 					>{{ dateTimePickerVisible ? '返回' : '進階' }}</el-button>
-					<el-button class="filter-item" type="primary" icon="el-icon-search" @click="getCarList()">搜尋</el-button>
+					<el-button class="filter-item" type="primary" icon="el-icon-search" @click="getList()">搜尋</el-button>
+					<el-switch style="margin-left: 10px;" v-show="timeTabId == 0 && listQuery.inspectionId" v-model="autoRefresh" size="small" active-text="自動" />
 				</span>
 			</div>
 		</div>
 		<el-row>
-			<el-col :span="16">
+			<el-col :span="16" style="position: relative;">
 				<div id="map" ref="map" />
+				<!-- 操作 -->
+				<div class="action-box">
+					<el-button class="btn-MapType" icon="el-icon-copy-document" size="small" :style="`color: ${options.mapList[mapType].color}`" @click="setMapType">{{ options.mapList[mapType].name }}</el-button>
+				</div>
 			</el-col>
 			<el-col class="info-panel" :span="8">
 				<div class="car-vod-panel">
@@ -106,7 +121,7 @@
 				<div class="car-info-panel">
 					<i class="el-icon-truck" />
 					<div v-if="Object.keys(carInfo).length > 0" class="car-info">
-						<el-row v-for="(text, key) in headers" :key="key" >
+						<el-row v-for="(text, key) in headers.carInfo" :key="key" >
 							<el-col :span="8">{{ text }}: </el-col>
 							<el-col :span="16">
 								<span v-if="key == 'pathId'">週期{{ carInfo[key] }}</span>
@@ -120,43 +135,17 @@
 				</div>
 			</el-col>
 		</el-row> 
-
-		<!-- <h5 v-if="list.length != 0">查詢期間：{{ searchRange }}</h5> -->
-
-		<!-- <el-table
-			empty-text="目前沒有資料"
-			:data="list"
-			border
-			fit
-			highlight-current-row
-			:header-cell-style="{'background-color': '#F2F6FC'}"
-			stripe
-			style="width: 100%"
-		>
-			<el-table-column
-				v-for="(value, key) in headers"
-				:key="key"
-				:prop="key"
-				:label="value.name"
-				align="center"
-				:formatter="formatter"
-				:sortable="value.sortable"
-			/>
-		</el-table> -->
-		<!-- <el-dialog v-el-drag-dialog class="streaming" :visible="true" width="720px" :modal="false" :modal-append-to-body="false" :append-to-body="false" :show-close="false" :close-on-click-modal="false" :close-on-press-escape="false" center> -->
-			<!-- <iframe width="720" height="405" src="https://www.youtube.com/embed/d148YHkaAGg?controls=0&autoplay=1&mute=1&rel=0&modestbranding=1" frameborder="0" allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture;" /> -->
-			<!-- <iframe src="http://bimtest.sytes.net:5080/WebRTCAppEE/play.html?name=246612205179051969409588&autoplay=true" frameborder="0" width="720" height="405"></iframe>
-		</el-dialog> -->
-
+		<el-image-viewer v-if="showImgViewer" class="img-preview" :on-close="() => { showImgViewer = false; }" :url-list="imgUrls" />
 	</div>
 </template>
 
 <script>
 import { Loader } from "@googlemaps/js-api-loader";
+import * as jsts from 'jsts/dist/jsts.min.js';
 import moment from 'moment';
-import { getInspectionList, getSpecInspection, getSpecInspectionTracks } from "@/api/car";
+import { getInspectionList, getSpecInspection, getSpecInspectionTracks, getInspectionCase } from "@/api/car";
 import { getInspectionRoute } from "@/api/inspection";
-import elDragDialog from '@/directive/el-drag-dialog';
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer';
 
 // 載入 Google Map API
 const loaderOpt = {
@@ -173,19 +162,27 @@ const loader = new Loader(loaderOpt);
 
 export default {
 	name: "carRoute",
-	directives: { elDragDialog },
+	components: { ElImageViewer },
 	data() {
 		return {
+			admAuth: false,
 			loading: false,
+			showImgViewer: false,
 			mediaAPIUrl: process.env.VUE_APP_MEDIA_API,
 			mediaGCSUrl: process.env.VUE_APP_MEDIA_URL,
 			showLayerAttach: false,
+			autoRefresh: false,
+			timer: null,
+			mapType: 'roadmap',
 			map: null,
-			polyLine: null,
+			polyLines: [],
 			markers: {
 				start: null,
 				end: null
 			},
+			imgUrls: [],
+			infoWindow: null,
+			caseInfo: [],
 			activeVodName: "",
 			timeTabId: 0,
 			dateTimePickerVisible: false,
@@ -227,12 +224,23 @@ export default {
 				inspectionId: ""
 			},
 			headers: {
-				// id: "路線",
-				pathId: "週期",
-				carId: "車號",
-				driverId: "駕駛",
-				modeId: "巡查方式",
-				createdAt: "開始時間"
+				carInfo: {
+					// id: "路線",
+					pathId: "週期",
+					carId: "車號",
+					driverId: "駕駛",
+					modeId: "巡查方式",
+					createdAt: "開始時間"
+				},
+				caseInfo: {
+					id: "缺失Id",
+					caseName: "缺失類型",
+					caseLevel: "缺失程度",
+					millingLength: "預估長", 
+					millingWidth: "預估寬",
+					roadName: "地址",
+					status: "狀態"
+				}
 			},
 			options: {
 				districtList: {
@@ -272,6 +280,9 @@ export default {
 					116: {
 						name: "文山區"
 					},
+					// 1003: {
+					// 	name: "台北市(8-30)"
+					// }
 				},
 				inspectRound: {
 					0: "全部",
@@ -290,44 +301,73 @@ export default {
 					4: "車輛巡查(AI)"
 				},
 				contractId: {
+					// 0: "超鉞",
 					1: "一標",
 					2: "二標",
 					3: "三標",
 					4: "四標",
 					5: "五標",
-					// 6: "六標"
+					6: "六標"
 				},
 				carId: {
+					0: {
+						1: "TST-0000"
+					},
 					1: {
 						// 1: "ATE-5102",
-						1: "RDX-6883",
+						1: "RDX-6883 (大同)",
 						2: "RDQ-6279",
 						// 3: "ATE-3192",
-						3: "RDX-6881",
+						3: "RDX-6881 (中山)",
 					},
 					2: {
-						1: "ATE-3236",
-						2: "BFX-7552",
+						1: "ATE-3236 (松山)",
+						2: "BFX-7552 (信義)",
 					},
 					3: {
-						1: "ALV-3038",
-						2: "APD-3308",
-						3: "AAA-0000",
+						1: "BUX-0597 (中正)", //中正
+						2: "RCX-7562 (萬華)", //萬華
 					},
 					4: {
-						1: "ATE-3287",
-						2: "ATE-3192",
+						1: "ATE-3287 (內湖)",
+						2: "ATE-3192 (南港)",
 					},
 					5: {
-						1: "BPG-0891",
-						2: "BFX-7551",
+						1: "BPG-0891 (士林)",
+						2: "BFX-7551 (北投)",
+					},
+					6: {
+						1: "RCX-7561 (大安)", //大安
+						2: "RCX-7560 (文山)", //文山
 					}
 				},
+				mapList: {
+					roadmap: {
+						name: "地圖",
+						color: "#B22222",
+					},
+					hybrid: {
+						name: "衛星(Google)",
+						color: "#00BFFF",
+					}
+				},
+				caseMap: [
+					{ caseName: ['坑洞'], showName: '坑洞', color: '#FF6347', icon: '/assets/icon/icon_red.png', order: 1 },
+					{ caseName: ['龜裂'], showName: '龜裂', color: '#00FFFF', icon: '/assets/icon/icon_lightBlue.png', order: 2 },
+					{ caseName: ['人手孔破損', '人孔'], showName: '人孔', color: '#90EE90', icon: '/assets/icon/icon_green.png', order: 3 },
+					{ caseName: ['縱向與橫向裂縫', '縱橫裂縫'], showName: '裂縫', color: '#FFE4B5', icon: '/assets/icon/icon_orange.png', order: 4 },
+				],
+				caseLevelMap: {
+					1: "輕",
+					2: "中",
+					3: "重"
+				}
 			},
 			carList: [],
 			carVodList: [],
 			carInfo: [],
-			carTracks: []
+			carTracks: [],
+			carTrackLastId: 0
 		};
 	},
 	computed: {
@@ -337,7 +377,12 @@ export default {
 		}
 	},
 	created() {
-		this.dataLayer = { route: {} };
+		this.dataLayer = { route: {}, case: {} };
+		this.admAuth = ['howard', 'ryan', 'lancelin'].includes(localStorage.username);
+		if(this.admAuth) {
+			this.options.contractId[0] = "超鉞";
+			this.options.districtList[1003] = { name: "台北市(8-30)" };
+		}
 
 		// Google Map錯誤處理
 		window.gm_authFailure = () => { 
@@ -352,7 +397,23 @@ export default {
 		loader.load().then(() => this.initMap()).catch(err => console.log("err: ", err));
 	},
 	mounted() {
-		this.getCarList();
+		// this.getCarList();
+	},
+	watch: {
+		autoRefresh(newValue) {
+			if(newValue) {
+				if(this.markers[`end${this.listQuery.contractId}${this.listQuery.carId}`].getAnimation() == null)
+					this.markers[`end${this.listQuery.contractId}${this.listQuery.carId}`].setAnimation(google.maps.Animation.BOUNCE);
+
+				this.timer = setInterval(() => { 
+					if(this.timeTabId == 0 && this.listQuery.inspectionId) this.getCarTrack(false);
+					else this.autoRefresh = false;
+				}, 20000);
+			} else {
+				clearInterval(this.timer);
+				this.markers[`end${this.listQuery.contractId}${this.listQuery.carId}`].setAnimation(null);
+			}
+		}
 	},
 	methods: {
 		// init google map
@@ -424,32 +485,62 @@ export default {
 				this.map.overlayMapTypes.push(labelsMapType);
 			}
 
-			// 建立marker
-			this.markers.start = new google.maps.Marker({
-				map: this.map,
-				icon: {
-					url: "/assets/icon/icon_redDot.png",
-					anchor: new google.maps.Point(5, 5),
-					scaledSize: new google.maps.Size(10, 10)
+			this.infoWindow = new google.maps.InfoWindow({ pixelOffset: new google.maps.Size(0, -10) });
+			this.infoWindow.addListener('domready', () => {
+				const infoScrnFullBtn = this.$el.querySelector("#map #info-scrn-full-btn");
+				if(infoScrnFullBtn) {
+					const clickHandle = infoScrnFullBtn.addEventListener("click", () => {
+						// NOTE 因為http，圖片另開視窗
+						// this.showImgViewer = true;
+						window.open(this.imgUrls[0]);
+						infoScrnFullBtn.removeEventListener("click", clickHandle);
+					});
 				}
 			});
 
-			this.markers.end = new google.maps.Marker({
-				map: this.map,
-				icon: {
-					url: "/assets/icon/truck.png",
-					anchor: new google.maps.Point(12, 12),
-					scaledSize: new google.maps.Size(24, 24)
+			// 建立marker
+			for(let contractId of Object.keys(this.options.carId)) {
+				for(let carId of Object.keys(this.options.carId[contractId])) {
+					this.markers[`start${contractId}${carId}`] = new google.maps.Marker({
+						map: this.map,
+						icon: {
+							url: "/assets/icon/icon_redDot.png",
+							scaledSize: new google.maps.Size(10, 10)
+						}
+					});
+
+					this.markers[`end${contractId}${carId}`] = new google.maps.Marker({
+						map: this.map,
+						label: {
+							text: `${contractId}-${carId}`,
+							color: 'white',
+							fontSize: '12px'
+						},
+						icon: {
+							url: "/assets/icon/truck.png",
+							anchor: new google.maps.Point(14, 14),
+							scaledSize: new google.maps.Size(28, 28),
+							labelOrigin: new google.maps.Point(10, 11)
+						}
+					});
 				}
+			}
+
+			// 巡視缺失
+			this.dataLayer.case = new google.maps.Data({ map: this.map });
+
+			this.dataLayer.case.addListener('click', (event) => {
+				// console.log("click: ", event);
+				this.showCaseContent(event.feature, event.latLng);
 			});
 
 			// 巡查路線(預定)
 			this.dataLayer.route = new google.maps.Data({ map: this.map });
 			this.dataLayer.route.setStyle({ 
-				strokeColor: '#FFF',
-				strokeWeight: 1,
-				strokeOpacity: 1,
-				fillColor: '#FF8C00',
+				strokeColor: '#B0C4DE',
+				strokeWeight: 3,
+				strokeOpacity: 0.8,
+				fillColor: '#B0C4DE',
 				fillOpacity: 0.6,
 				zIndex: 1
 			});
@@ -477,7 +568,20 @@ export default {
 					this.searchDate = moment().subtract(2, "d");
 					break;
 			}
-			this.getCarList();
+			this.getList();
+		},
+		setMapType() {
+			const mapKeyList = Object.keys(this.options.mapList);
+			let index = mapKeyList.indexOf(this.mapType);
+			index = (index+1) % mapKeyList.length;
+			this.mapType = mapKeyList[index];
+			this.map.setMapTypeId(this.mapType);
+		},
+		getList() {
+			if(this.listQuery.contractId == 99) this.getAllCarTrack();
+			else this.getCarList();
+
+			this.getCaseInfo();
 		},
 		getCarList() {
 			this.loading = true;
@@ -486,7 +590,8 @@ export default {
 			this.carVodList = [];
 			this.carTracks = [];
 			this.listQuery.inspectionId = "";
-			if(this.polyLine != undefined) this.polyLine.setMap(null);
+			this.polyLines.forEach(polyLine => polyLine.setMap(null));
+			this.polyLines = [];
 			for(const marker of Object.values(this.markers).filter(marker => marker != null)) marker.setMap(null);
 
 			const date = moment(this.searchDate).format("YYYY-MM-DD");
@@ -550,42 +655,231 @@ export default {
 					// this.loading = false;
 				}).catch(err => { this.loading = false; });
 		},
-		getCarTrack() {
-			// if(this.polyLine != undefined) this.polyLine.setMap(null);
-			// for(const marker of Object.values(this.markers)) marker.setMap(null);
-			this.dataLayer.route.revertStyle();
+		getCarTrack(isFocusAll = true) {
+			if (isFocusAll) this.dataLayer.route.revertStyle();
+			const lastId = isFocusAll ? 0 : this.carTrackLastId;
 
-			getSpecInspectionTracks(this.listQuery.inspectionId).then(response => {
+			getSpecInspectionTracks(this.listQuery.inspectionId, { lastId }).then(response => {
 				if (response.data.list.length == 0) {
 					this.$message({
 						message: "查無資料",
 						type: "error",
 					});
+					this.autoRefresh = false;
 					this.loading = false;
 				} else {
-					this.carTracks = response.data.list;
+					let lastPt = [];
+					if(this.carTracks.length != 0) {
+						const lastTracks = this.carTracks[this.carTracks.length - 1];
+						lastPt = [ lastTracks[0] ];
+					}
+					this.carTracks.push(response.data.list);
+					this.carTrackLastId = this.carTracks.length == 0 ? 0 : this.carTracks[this.carTracks.length - 1][0].id;
 
-					const paths = this.carTracks.map(point => ({ lat: point.lat, lng: point.long }));
 					// 建立路線
-					this.polyLine = new google.maps.Polyline({
+					const paths = [ ...this.carTracks[this.carTracks.length - 1], ...lastPt ].map(point => ({ lat: point.lat, lng: point.long }));
+					const polyLine = new google.maps.Polyline({
 						path: paths,
 						geodesic: true,
-						strokeColor: "#9E9D24",
-						strokeOpacity: 1,
-						strokeWeight: 5,
+						strokeColor: "#6158EA",
+						strokeOpacity: 0.8,
+						strokeWeight: 8,
 						map: this.map
 					})
+					this.polyLines.push(polyLine);
 
-					const bounds = new google.maps.LatLngBounds();
-					paths.forEach(position => bounds.extend(position));
-					this.map.fitBounds(bounds);
+					if(isFocusAll) {
+						const bounds = new google.maps.LatLngBounds();
+						paths.forEach(position => bounds.extend(position));
+						this.map.fitBounds(bounds);
+					} this.map.panTo(paths[0]);
 
-					this.markers.start.setPosition(paths[paths.length-1]);
-					this.markers.end.setPosition(paths[0]);
-					for(const marker of Object.values(this.markers)) marker.setMap(this.map);
+					if(isFocusAll) {
+						this.markers[`start${this.listQuery.contractId}${this.listQuery.carId}`].setPosition(paths[paths.length-1]);
+						this.markers[`start${this.listQuery.contractId}${this.listQuery.carId}`].setMap(this.map);
+					}
+
+					this.markers[`end${this.listQuery.contractId}${this.listQuery.carId}`].setPosition(paths[0]);
+					this.markers[`end${this.listQuery.contractId}${this.listQuery.carId}`].setMap(this.map);
+
+					if (this.showLayerAttach) this.intersectRoute();
 				}
 				this.loading = false;
 			}).catch(err => { this.loading = false; });
+		},
+		getAllCarTrack() {
+			this.loading = true;
+			this.carList = [];
+			this.carInfo = {};
+			this.carVodList = [];
+			this.carTracks = [];
+			this.listQuery.inspectionId = "";
+			this.polyLines.forEach(polyLine => polyLine.setMap(null));
+			this.polyLines = [];
+			for(const marker of Object.values(this.markers).filter(marker => marker != null)) marker.setMap(null);
+
+			const date = moment(this.searchDate).format("YYYY-MM-DD");
+			this.searchRange = date;
+
+			for(let contractId of [1, 2, 3, 4, 5, 6]) {
+				for(let carId of Object.keys(this.options.carId[contractId])) {
+					this.loading = true;
+					getInspectionList({
+						contractId: contractId,
+						modeId: this.listQuery.modeId,
+						carId: carId,
+						date: date
+					}).then(response => {
+						if (response.data.list.length != 0) {
+							//NOTE: 因為一天只會有一次車巡，所以取第一筆
+							const inspectionId = response.data.list[0].id;
+
+							getSpecInspectionTracks(inspectionId).then(response => {
+								if (response.data.list.length != 0) {
+									this.carTracks.push(response.data.list);
+
+									// 建立路線
+									const paths = this.carTracks[this.carTracks.length - 1].map(point => ({ lat: point.lat, lng: point.long }));
+									const polyLine = new google.maps.Polyline({
+										path: paths,
+										geodesic: true,
+										strokeColor: "#6158EA",
+										strokeOpacity: 0.8,
+										strokeWeight: 8,
+										map: this.map
+									})
+									this.polyLines.push(polyLine);
+
+									this.markers[`start${contractId}${carId}`].setPosition(paths[paths.length-1]);
+									this.markers[`start${contractId}${carId}`].setMap(this.map);
+									this.markers[`end${contractId}${carId}`].setPosition(paths[0]);
+									this.markers[`end${contractId}${carId}`].setMap(this.map);
+								}
+							}).catch(err => { this.loading = false; });
+						}
+					}).catch(err => console.log(err))
+						.finally(() => this.loading = false);
+				}
+			}
+		},
+		getCaseInfo() {
+			const timeStart = moment(this.searchDate).format("YYYY-MM-DD");
+			const timeEnd = moment(this.searchDate).add(1, 'd').format("YYYY-MM-DD");
+			getInspectionCase({ contractId: this.listQuery.contractId, timeStart, timeEnd }).then(response => {
+				const caseList = response.data.list.map(caseSpec => {
+					const codeArr = caseSpec.caseType.match(/&#(\d+);/g) || [];
+					if(codeArr.length > 0) {
+						caseSpec.caseType = String.fromCharCode(...codeArr.map(l => Number(l.replace(/[&#;]/g, ''))));
+					}
+
+					const codeArr2 = caseSpec.imgfile.match(/&#(\d+);/g) || [];
+						for(const code of codeArr2) {
+							caseSpec.imgfile = caseSpec.imgfile.replace(code, String.fromCharCode(Number(code.replace(/[&#;]/g, ''))));
+						}
+					caseSpec.imgUrl =  /^https:\/\//.test(caseSpec.imgfile) ? caseSpec.imgfile : `http://center.bim-group.com${caseSpec.imgfile}`;
+					return caseSpec
+				});
+
+				this.caseInfo = caseList.reduce((acc, cur)=> {
+					const accFilter = acc.filter(caseSpec => caseSpec.caseName.includes(cur.caseType) || (caseSpec.showName && cur.caseType.includes(caseSpec.showName)));
+					if(accFilter.length == 0) {
+						const caseFilter = this.options.caseMap.filter(caseSpec => caseSpec.caseName.includes(cur.caseType) || (caseSpec.showName && cur.caseType.includes(caseSpec.showName)));
+						acc.push({ 
+							caseName: caseFilter.length == 0 ? [] : caseFilter[0].caseName,
+							showName: caseFilter.length == 0 || !caseFilter[0].showName ? '' : caseFilter[0].showName,
+							color: caseFilter.length == 0 ? '#1E90FF' : caseFilter[0].color,
+							icon: caseFilter.length == 0 ? '/assets/icon/icon_blue.png' : caseFilter[0].icon,
+							order: caseFilter.length == 0 ? 5 : caseFilter[0].order,
+							active: true,
+							total: 1 
+						});
+					} else accFilter[0].total++;
+
+					return acc;
+				}, []);
+
+				this.caseInfo.sort((a, b) => a.order - b.order);
+
+				this.geoJSON = {
+					"type": "FeatureCollection",
+					"name": "caseJSON",
+					"features": []
+				};
+
+				for (const caseSpec of caseList) {
+					let feature = {
+						"type": "Feature",
+						"properties": {
+							"id": caseSpec.serialno,
+							"roadName": caseSpec.casename == '0' ? '' : caseSpec.casename,
+							"caseName": caseSpec.caseType,
+							"caseLevel": caseSpec.broketype ? this.options.caseLevelMap[caseSpec.broketype] : '',
+							"millingLength": caseSpec.elength || 0, 
+							"millingWidth": caseSpec.blength || 0,
+							"status": caseSpec.reccontrol == 2 ? '已分案' : '未分案',
+							"imgUrl": caseSpec.imgUrl
+						},
+						"geometry": {
+							"type": "POINT",
+							"coordinates": [ Number(caseSpec.yy), Number(caseSpec.xx) ]
+						}
+					};
+					this.geoJSON.features.push(feature);
+				}
+
+				this.setCaseLayer(this.geoJSON);
+			}).catch(err => console.log(err))
+		},
+		setCaseLayer(geoJSON) {
+			this.dataLayer.case.forEach(feature => this.dataLayer.case.remove(feature));
+			this.dataLayer.case.addGeoJson(geoJSON);
+			this.dataLayer.case.setStyle(feature => {
+				const caseName = feature.getProperty("caseName");
+				const caseFilter = this.options.caseMap.filter(caseSpec => caseSpec.caseName.includes(caseName));
+
+				return { 
+					icon: { 
+						url: caseFilter.length == 0 ? '/assets/icon/icon_blue.png' : caseFilter[0].icon,
+						scaledSize: new google.maps.Size(30, 30),
+					}
+				};
+			})
+		},
+		caseFilter() { 
+			let geoJSONFilter = JSON.parse(JSON.stringify(this.geoJSON));
+			geoJSONFilter.features = geoJSONFilter.features.filter(feature => {
+				const selectCaseList = this.caseInfo.filter(caseSpec => caseSpec.active).map(caseSpec => caseSpec.caseName).flat();
+				return selectCaseList.includes(feature.properties.caseName)
+			})
+
+			this.setCaseLayer(geoJSONFilter);
+		},
+		showCaseContent(props, position) {
+			let imgUrl = props.getProperty('imgUrl');
+			const codeArr = imgUrl.match(/&#(\d+);/g) || [];
+			const codeConvert = codeArr.map(l => String.fromCharCode(Number(l.replace(/[&#;]/g, ''))));
+			for(const i in codeArr) imgUrl = imgUrl.replace(codeArr[i], codeConvert[i]);
+			this.imgUrls = [ imgUrl ];
+
+			let contentText = `<div style="width: 400px;">`;
+			for(const key in this.headers.caseInfo) {
+				if(props.getProperty(key)) {
+					const prop = props.getProperty(key);
+					contentText += `<div class="el-row" style="margin-bottom: 4px">`;
+					contentText += `<div class="el-col el-col-8" style="padding-left: 5px; font-size: 18px; line-height: 18px;">${this.headers.caseInfo[key]}</div>`;
+					contentText += `<div class="el-col el-col-16" style="font-size: 18px; line-height: 18px;">${prop}</div>`;
+					contentText += `</div>`;
+				}
+			}
+			contentText += `<img src="${imgUrl}" class="img" onerror="this.className='img hide-img'">`;
+			contentText += `<button type="button" id="info-scrn-full-btn" class="info-btn scrn-full el-button el-button--default" style="height: 30px; width: 30px;"><i class="el-icon-full-screen btn-text"></i></button></img>`;
+			contentText += `</div>`;
+			// console.log(contentText);
+			this.infoWindow.setContent(contentText);
+			this.infoWindow.setOptions({ pixelOffset: new google.maps.Size(0, -10)});
+			this.infoWindow.setPosition(position);
+
+			this.infoWindow.open(this.map);
 		},
 		getRouteList() {
 			this.loading = true;
@@ -594,6 +888,7 @@ export default {
 			getInspectionRoute({
 				zipCode: this.listQuery.inspectRoundZipCode,
 				inspectRound: this.listQuery.inspectRound,
+				isCar: true
 			}).then(response => {
 				if (response.data.blockList.length == 0 && response.data.routeList.length == 0) {
 					this.$message({
@@ -631,7 +926,7 @@ export default {
 		},
 		intersectRoute() {
 			this.dataLayer.route.revertStyle();
-			const jstsRoutePoints = this.carTracks.map(point => this.createJstsGeometry([[ point.long, point.lat ]]));
+			const jstsRoutePoints = this.carTracks.flat(1).map(point => this.createJstsGeometry([[ point.long, point.lat ]]));
 			// console.log(jstsRoutePoints.length);
 			this.dataLayer.route.forEach(feature => {
 				feature.toGeoJson(json => {
@@ -641,12 +936,12 @@ export default {
 						if(i == 0) this.loading = true;
 						if(jstsBlockPolygon.contains(jstsRoutePoints[i])) {
 							// console.log("BINGO: ", i);
-							this.dataLayer.route.overrideStyle(feature, { fillColor: "#8FBC8F" });
+							this.dataLayer.route.overrideStyle(feature, { strokeColor: '#4169E1', fillColor: "#4169E1" });
 							this.loading = false;
 							break;
 						} else if(i == jstsRoutePoints.length - 1) {
 							this.loading = false;
-							this.dataLayer.route.overrideStyle(feature, { fillColor: "#DC143C" });
+							this.dataLayer.route.overrideStyle(feature, { strokeColor: '#DC143C', fillColor: "#DC143C" });
 						}
 					}
 				});
@@ -669,23 +964,6 @@ export default {
 		},
 		formatTime(time) {
 			return moment(time).format("YYYY-MM-DD HH:mm:ss");
-		},
-		handleDownload() {
-			let tHeader = Object.values(this.headers);
-			let filterVal = Object.keys(this.headers);
-			// tHeader = [ "日期", "星期", "DAU", "新增帳號數", "PCU", "ACU", "儲值金額", "DAU帳號付費數", "DAU付費率", "DAU ARPPU", "DAU ARPU", "新增帳號儲值金額", "新增帳號付費數", "新增付費率", "新增帳號ARPPU", "新增帳號ARPU" ]
-			// filterVal = [ "date", "weekdayText", "dau", "newUser", "pcu", "acu", "amount", "dauPaid", "dauPaidRatio", "dauARPPU", "dauARPU", "newUserAmount", "newUserPaid", "newUserPaidRatio", "newUserARPPU", "newUserARPU" ]
-			let data = this.formatJson(filterVal, this.list);
-
-			import("@/vendor/Export2Excel").then((excel) => {
-				excel.export_json_to_excel({
-					header: tHeader,
-					data,
-				});
-			});
-		},
-		formatJson(filterVal, jsonData) {
-			return jsonData.map((v) => filterVal.map((j) => v[j]));
 		}
 	},
 };
@@ -722,17 +1000,34 @@ export default {
 				text-align: center
 		.filter-item
 			margin-right: 5px
-		// .streaming
-		// 	z-index: 0 !important
-		// 	.el-dialog
-		// 		top: -20px
-		// 		left: -350px
-		// 		.el-dialog__header
-		// 			height: 0
-		// 			background-color: #409EFF
-		// 		.el-dialog__body
-		// 			padding: 0
-		// 			height: 405px
+	.info-box
+		position: absolute
+		top: 18px
+		left: 248px
+		background-color: rgba(white, 0.1)
+		border: none
+		z-index: 1
+		.el-card__body
+			padding: 2px
+			display: flex
+			.color-box
+				line-height: 30px
+				height: 30px
+				width: 120px
+				margin-bottom: 0px
+				margin-left: 5px
+	.action-box
+		.btn-MapType
+			position: absolute
+			top: 24px
+			right: 24px
+			background-color: rgba(white, 0.8)
+	.img-preview
+		width: 100%
+		.el-image-viewer__mask
+			opacity: 0.7
+		.el-icon-circle-close
+			color:  #FFF
 	#map
 		overflow: hidden
 		background: none !important
@@ -747,6 +1042,19 @@ export default {
 				border-collapse: collapse !important
 				border: none !important
 				padding: 5px
+			.img
+				width: 100%
+				object-fit: scale-down
+				&.hide-img
+					display: none
+			.info-btn
+				position: absolute
+				right: 30px
+				&.scrn-full
+					padding: 0
+					bottom: 25px
+					background-color: rgba( #FFF, 0.3)
+					border-color:  #FFF
 	.info-panel
 		height: calc(100vh - 50px)
 		background-color: #E6EE9C

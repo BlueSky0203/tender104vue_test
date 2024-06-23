@@ -7,10 +7,11 @@ const caseRouter = {
 	component: Layout,
 	redirect: '/PCIManage/PCIManager',
 	name: 'PCIManage',
+	alwaysShow: true,
 	meta: {
-		title: 'PCI計算',
+		title: '鋪面指標',
 		icon: 'el-icon-star-on', 
-		roles: ['distress']
+		roles: ['distress', 'PCIManage']
 	},
 	children: [
 		{
@@ -18,8 +19,8 @@ const caseRouter = {
 			component: () => import('@/views/PCIManage/PCIManager'),
 			name: 'PCIManager',
 			meta: {
-				title: '合約管理',
-				roles: ['distress.inspectorMaster']
+				title: 'PCI計算',
+				roles: ['PCIManage.base']
 			}
 		},
 		{

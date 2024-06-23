@@ -1,29 +1,23 @@
 <template>
-	<div class="app-container" v-loading="loading">
+	<div class="app-container inspection-progress" v-loading="loading">
 		<h2>巡查歷程</h2>
 		<!-- 搜尋 -->
 		<div class="filter-container">
 			<div class="filter-item">
-				<div class="el-input el-input--medium el-input-group el-input-group--prepend">
-					<div class="el-input-group__prepend">
-						<span>行政區</span>
-					</div>
-					<el-select
-						v-model.number="listQuery.ZipCode"
-						placeholder="請選擇"
-						popper-class="type-select"
-						style="width: 100px"
-					>
-					<el-option
-						v-for="(name, id) in area"
-						:key="id"
-						:value="Number(id)"
-						:label="name"
-					/>
-					</el-select>
-				</div>
+				<el-select v-model="listQuery.filterType" popper-class="type-select" :disabled="Object.keys(options.tenderRoundMap).length == 0">
+					<el-option label="行政區" :value="1" />
+					<el-option label="合約" :value="2" />
+				</el-select>
+				<el-select v-if="listQuery.filterType == 1" v-model.number="listQuery.ZipCode" placeholder="請選擇" popper-class="type-select" style="width: 100px">
+					<el-option v-for="zip in options.districtOrder.filter(zip => zip != 1001)" :key="zip" :label="options.districtMap[zip].district" :value="Number(zip)" />
+				</el-select>
+				<el-select v-if="listQuery.filterType == 2" v-model.number="listQuery.tenderRound" class="tender-select" popper-class="type-select tender">
+					<el-option v-for="(val, type) in options.tenderRoundMap" :key="type" :label="val.name" :value="Number(type)">
+						<div :style="`color: #${Math.floor(val.tenderId * 16777215).toString(16).substr(0, 8)}`">{{ val.name }}</div>
+					</el-option>
+				</el-select>
 			</div>
-			<div class="filter-item">
+			<div v-if="listQuery.filterType != 2" class="filter-item">
 				<div style="font-size: 12px; color: #909399">收取日</div>
 				<time-picker class="filter-item" :shortcutType="'year'" :timeTabId.sync="timeTabId" :dateRange.sync="dateRange" @search="getList"/>
 			</div>
@@ -117,7 +111,7 @@
 
 <script>
 import moment from "moment";
-import { getTenderRound } from "@/api/type";
+import { getTenderRound, getDistMap } from "@/api/type";
 import { getInspectionList, setInspectionList } from "@/api/inspection";
 import checkPermission from '@/utils/permission';
 import TimePicker from '@/components/TimePicker';
@@ -134,7 +128,9 @@ export default {
 		timeTabId: 1,
 		dateRange: [ moment().startOf("week").add(1, 'day').toDate(), moment().endOf("week").add(1, 'day').toDate() ],
 		listQuery: {
-			ZipCode:0,
+			filterType: 1,
+			ZipCode: 0,
+			tenderRound: 0
 		},
 		area:{
 			0: "全部",
@@ -150,6 +146,7 @@ export default {
 			114: '內湖區',
 			115: '南港區',
 			116: '文山區',
+			999: '橋涵區'
 		},
 		list:[],
 		rowActive: {},
@@ -182,7 +179,9 @@ export default {
 		dialogVisible: false,
 		InputNotes:'',
 		options: {
-			tenderRoundMap: {}
+			tenderRoundMap: {},
+			districtMap: {},
+			districtOrder: [],
 		}
 	};
 	},
@@ -219,6 +218,16 @@ export default {
 				this.listQuery.tenderRound = -1;
 			}
 		});
+
+		getDistMap().then(response => {
+			this.$set(this.options.districtMap, '0', { district: '全部'	});
+			this.options.districtOrder.push('0');
+
+			Object.keys(response.data.districtMap).filter(key => key < 1000).forEach(key => {
+				this.$set(this.options.districtMap, key, response.data.districtMap[key]);
+				this.options.districtOrder.push(key);
+			});
+		});
 	},
 	mounted() {},
 	methods: {
@@ -241,7 +250,9 @@ export default {
 			return time ? moment(time).format("YYYY/MM/DD") : "";
 		},
 		getList(){
-			if ((this.listQuery.ZipCode != 0 && !Number(this.listQuery.ZipCode))) {
+			const tenderRound = this.options.tenderRoundMap[this.listQuery.tenderRound];
+
+			if ((this.listQuery.ZipCode != 0 && !Number(this.listQuery.ZipCode) ) || tenderRound ==  undefined) {
 				this.$message({
 					message: "請選擇行政區",
 					type: "error",
@@ -254,9 +265,10 @@ export default {
 				this.list = [];
 
 				getInspectionList({
-					zipCode: this.listQuery.ZipCode,
-					timeStart: startDate,
-					timeEnd: moment(endDate).add(1, "d").format("YYYY-MM-DD")
+					zipCode: this.listQuery.filterType == 1 ? this.listQuery.ZipCode : null,
+					surveyId: this.listQuery.filterType == 2 ? tenderRound.id : null,
+					timeStart: this.listQuery.filterType != 2 ? startDate : null,
+					timeEnd: this.listQuery.filterType != 2 ? moment(endDate).add(1, "d").format("YYYY-MM-DD") : null
 				}).then(response => {
 					if (response.data.list.length == 0) {
 						this.$message({
@@ -311,4 +323,40 @@ export default {
 </script>
 
 <style lang="sass">
+.inspection-progress
+	.filter-container
+		.filter-item
+			margin-right: 5px
+			.el-select
+				width: 80px
+				.el-input__inner
+					padding-left: 8px
+					padding-right: 10px
+				.el-input__suffix
+					right: 0
+					margin-right: -3px
+					transform: scale(0.7)
+			.el-select:first-child .el-input__inner
+				background-color: #F5F7FA
+				color: #909399
+				border-right: none
+				border-top-right-radius: 0
+				border-bottom-right-radius: 0
+				&:focus
+					border-color: #DCDFE6
+			.el-select:last-child .el-input__inner
+				border-top-left-radius: 0
+				border-bottom-left-radius: 0
+				padding-left: 10px
+				text-align: left
+			.el-select.tender-select
+				width: 240px
+				.el-input__inner
+					padding-left: 8px
+					padding-right: 10px
+					text-align: left
+				.el-input__suffix
+					right: 0
+					margin-right: -3px
+					transform: scale(0.7)
 </style>

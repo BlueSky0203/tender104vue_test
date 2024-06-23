@@ -631,9 +631,9 @@ export default {
 		setResult() {
 			this.loading = true;
 			this.showResultConfirm = false;
-			if(this.rowActive.State & 32) this.rowActive.StateNotes.SV = this.options.reasonType[this.rowActive.ReasonType];
+			if(this.rowActive.State & 32) this.rowActive.StateNotes.SV = this.options.reasonType[this.rowActive.ReasonType] || this.rowActive.StateNotes.SV;
 			else this.rowActive.StateNotes.SV = "";
-			if(this.rowActive.State & 64) this.rowActive.StateNotes.Organ = this.options.reasonType[this.rowActive.ReasonType];
+			if(this.rowActive.State & 64) this.rowActive.StateNotes.Organ = this.options.reasonType[this.rowActive.ReasonType] || this.rowActive.StateNotes.Organ;
 			else this.rowActive.StateNotes.Organ = "";
 
 			setCaseList( this.rowActive.id, {

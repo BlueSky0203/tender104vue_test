@@ -292,13 +292,15 @@ export default {
 		},
 		setPDFinputs() {
 			//工程名稱
-			const reportDate = moment(this.reportDate).subtract(1911, 'year');
+			const reportDate = moment(this.reportDate).format("YYYY/MM/DD").split("/");
+			reportDate[0] = Number(reportDate[0]) - 1911;
 			this.inputs.contractName = this.districtList[this.inputs.zipCode].tenderName;
 			//紀錄編號
-			this.inputs.serialNumber_AC = reportDate.format("YYYYMMDD02").slice(1) + String(this.initPage).padStart(2, '0');	
+			this.inputs.serialNumber_AC = reportDate.join("") + "02" + String(this.initPage).padStart(2, '0');	
 			//檢查日期
-			const checkDate = moment(this.checkDate).subtract(1911, 'year');
-			this.inputs.date = checkDate.format("YYYY年MM月DD日").slice(1);
+			const checkDate = moment(this.checkDate).format("YYYY/MM/DD").split("/");
+			checkDate[0] = Number(checkDate[0]) - 1911;
+			this.inputs.date = `${checkDate[0]}年${checkDate[1]}月${checkDate[2]}日`;
 			//缺失次數
 			for(const key of ['hole_Num41_AC', 'sidewalk_Num41_AC', 'crack_Num41_AC', 'uplift_Num41_AC', 'sidewalk_Num41_FA', 'failContractRequire_Num41_AC', 'companyCheck_Num41_AC']) {
 				this.inputs[key] = String(this.inputForm[key]);
@@ -352,15 +354,17 @@ export default {
 		},
 		storeData(){
 			this.loading = true;
+			const inputs = JSON.parse(JSON.stringify(this.inputs));
 			const storedContent = {
 				initPage: this.initPage,
-				inputs: this.inputs
+				inputs
 			}
-			setPerfContent(this.listQuery.perfContentId, {
-				checkDate: moment(this.checkDate).format("YYYY-MM-DD"),
-				pageCount: 1,
-				content: JSON.stringify(storedContent)
-			}).then(response => {
+			let uploadForm = new FormData();
+			uploadForm.append('checkDate', moment(this.checkDate).format("YYYY-MM-DD"));
+			uploadForm.append('pageCount', 1);
+			uploadForm.append('content', JSON.stringify(storedContent));
+
+			setPerfContent(this.listQuery.perfContentId, uploadForm).then(response => {
 				if ( response.statusCode == 20000 ) {
 					this.$message({
 						message: "提交成功",
@@ -430,8 +434,7 @@ export default {
 			}
 		},
 		formatDate(date){
-			const momentDate = moment(date);
-			return momentDate.isValid() ? momentDate.format('YYYY-MM-DD') : "-";
+			return moment(date).isValid() ? moment(date).format('YYYY-MM-DD') : "-";
 		}
 	},
 };

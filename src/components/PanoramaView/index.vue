@@ -1,6 +1,6 @@
 <template>
 	<div ref="panoramaView" class="panorama-view">
-		<div id="panorama">
+		<div v-show="showPanorama" id="panorama">
 			<div v-if="localEnv && panorama" style="position: absolute; top: 0; left: 0; z-index:99; background-color: rgba(255, 255, 255, 0.6); padding: 5px 10px">
 				<el-input
 					class="searchBox"
@@ -11,19 +11,22 @@
 				/>
 				<el-checkbox v-model="isAutoMove" @change="showPanoramaLayer(panorama.getScene())">自動前進</el-checkbox>
 				<el-checkbox v-model="isAutoRotate" @change="setAutoRotate()">自動旋轉</el-checkbox>
-				<div> {{ panorama.getScene() }}</div>
+				<div>{{ panorama.getScene() }}</div>
 				<div>{{ panoramaTestInfo }} </div>
 				<div>{{ panoramaTestInfo.position }}</div>
 			</div>
 
-			<el-card v-if="hotSpotIdList.dot.length > 1 || isReview" class="info-box right">
+			<el-card v-if="hotSpotIdList.dot.length >= 1 || isReview || caseInfo.isPrev" class="info-box right">
 				<el-form :model="caseInfo" label-width="70px" size="small">
-					<el-form-item prop="trackingId" label="追蹤Id" style="margin-bottom: 0">
-						<span v-if="isReview">{{ caseInfo.trackingId }}</span>
-						<el-input v-else v-model="caseInfo.trackingId" size="mini" style="width: 130px" @change="trackingCase()" />
+					<el-form-item v-if="isReview || caseInfo.dateMark_At" prop="id" label="缺失Id" style="margin-bottom: 0">
+						<span>{{ caseInfo.id }}</span>
 					</el-form-item>
-					<el-form-item prop="dateReport" label="通報時間">
-						<span v-if="isReview">{{ formatTime(caseInfo.dateReport) }}</span>
+					<el-form-item prop="trackingId" label="追蹤Id" style="margin-bottom: 0">
+						<span v-if="isReview || caseInfo.dateMark_At">{{ caseInfo.trackingId }}</span>
+						<el-input v-else v-model="caseInfo.trackingId" :class="{'track-highlight': Number(caseInfo.trackingId) != 0}" size="mini" style="width: 130px" @change="trackingCase()" />
+					</el-form-item>
+					<el-form-item prop="dateReport" :label="caseInfo.dateMark_At && caseInfo.markType == 2 ? '標記完工' : caseInfo.dateMark_At && caseInfo.markType == 0 ? '標記誤判' : '通報時間'" style="margin-bottom: 0">
+						<span v-if="isReview || caseInfo.dateMark_At">{{ formatTime(caseInfo.dateReport) }}</span>
 						<el-date-picker
 							v-else
 							v-model="caseInfo.dateReport"
@@ -33,41 +36,52 @@
 							size="mini"
 						/>
 					</el-form-item>
-					<el-form-item prop="type" label="缺失類型" style="margin-bottom: 5px">
-						<span v-if="isReview">{{ options.caseTypeMap[caseInfo.distressType] }}</span>
+					<el-form-item prop="type" label="權責單位" style="margin-bottom: 0">
+						<span v-if="isReview || caseInfo.dateMark_At">{{ options.competentTypeMap[caseInfo.competentId] }}</span>
+						<el-select v-else v-model="caseInfo.competentId" size="mini" @change="caseInfo.distressType = ''">
+							<el-option v-for="(val, key) in options.competentTypeMap" :key="key" :label="options.competentTypeMap[key]" :value="Number(key)" />
+						</el-select>
+					</el-form-item>
+					<el-form-item v-if="!isReview && !caseInfo.dateMark_At" prop="type" label="設施類型" style="margin-bottom: 0">
+						<el-select v-model="caseInfo.deviceType" size="mini" @change="changeDeviceType()">
+							<el-option v-for="(val, key) in options.deviceTypeMap" :key="key" :label="options.deviceTypeMap[key]" :value="Number(key)" />
+						</el-select>
+					</el-form-item>
+					<el-form-item prop="type" label="缺失類型" style="margin-bottom: 0">
+						<span v-if="isReview || caseInfo.dateMark_At">{{ options.caseTypeMapFlat[caseInfo.distressType] }}</span>
 						<el-select v-else v-model="caseInfo.distressType" size="mini" @change="calcCaseInfo">
-							<el-option v-for="key in options.caseTypeMapOrder" :key="key" :label="options.caseTypeMap[key]" :value="Number(key)" />
+							<el-option v-for="key in options.caseTypeMapOrder[caseInfo.deviceType]" :key="key" :label="options.caseTypeMapFlat[key]" :value="Number(key)" />
 						</el-select>
 					</el-form-item>
 					<el-form-item prop="level" label="缺失程度">
-						<span v-if="isReview">{{ options.caseLevelMap[caseInfo.distressLevel] }}</span>
+						<span v-if="isReview || caseInfo.dateMark_At">{{ options.caseLevelMap[caseInfo.distressLevel] }}</span>
 						<el-select v-else v-model="caseInfo.distressLevel" size="mini">
 							<el-option v-for="(name, level) in options.caseLevelMap" :key="level" :label="name" :value="Number(level)" />
 						</el-select>
 					</el-form-item>
 					<el-form-item prop="millingLength" label="預估長" style="margin-bottom: 0">
-						<span v-if="isReview">{{ caseInfo.millingLength }}</span>
+						<span v-if="isReview || caseInfo.dateMark_At">{{ caseInfo.millingLength }}</span>
 						<el-input v-else v-model="caseInfo.millingLength" size="mini" style="width: 130px" @change="calArea()" />
 					</el-form-item>
 					<el-form-item prop="millingWidth" label="預估寬" style="margin-bottom: 0">
-						<span v-if="isReview">{{ caseInfo.millingWidth }}</span>
+						<span v-if="isReview || caseInfo.dateMark_At">{{ caseInfo.millingWidth }}</span>
 						<el-input v-else v-model="caseInfo.millingWidth" size="mini" style="width: 130px" @change="calArea()" />
 					</el-form-item>
 					<el-form-item prop="millingArea" label="預估面積">
-						<span v-if="isReview">{{ caseInfo.millingArea }}</span>
+						<span v-if="isReview || caseInfo.dateMark_At">{{ caseInfo.millingArea }}</span>
 						<el-input v-else v-model="caseInfo.millingArea" size="mini" style="width: 130px" />
 					</el-form-item>
-					<el-form-item prop="address" label="地址" style="margin-bottom: 5px">
-						<span v-if="isReview">{{ caseInfo.place }}</span>
+					<el-form-item prop="address" label="地址" style="margin-bottom: 0">
+						<span v-if="isReview || caseInfo.dateMark_At">{{ caseInfo.place }}</span>
 						<el-input v-else v-model="caseInfo.place" type="textarea" :rows="2" />
-						<div v-if="!isReview" slot="label">
+						<div v-if="!(isReview || caseInfo.dateMark_At)" slot="label">
 							<div style="height: 24px; line-height: 24px; margin: -3px 2px -5px 0">地址</div>
 							<el-button type="success" size="mini" style="padding: 5px" :loading="isGetAddress" @click="getAddress()">填入</el-button>
 						</div>
 					</el-form-item>
-					<el-form-item prop="roadDir" label="車道">
-						<span v-if="isReview">{{ options.roadDir[caseInfo.direction] }} - {{ caseInfo.lane }}</span>
-						<el-input v-else class="road-dir" v-model="caseInfo.lane" size="mini">
+					<el-form-item prop="roadDir" label="車道" style="margin-bottom: 0">
+						<span v-if="isReview || caseInfo.dateMark_At">{{ options.roadDir[caseInfo.direction] }} - {{ caseInfo.lane }}</span>
+						<el-input v-else class="road-dir" type="number" v-model="caseInfo.lane" size="mini" :min="1" :max="5" @blur="changeValue(caseInfo)">
 							<el-select slot="prepend" v-model="caseInfo.direction" popper-class="type-select" size="mini">
 								<el-option v-for="(name, id) in options.roadDir" :key="id" :label="name" :value="Number(id)" />
 							</el-select>
@@ -81,7 +95,7 @@
 									<el-image slot="reference" style="width: 100px; height: 100px" :src="caseInfo[imgType]" fit="contain" @click="$emit('setCaseImgViewer', { imgUrls: [ caseInfo[imgType] ], isOpen: true })" />
 								</el-popover>
 							</el-col>
-							<el-col v-if="!isReview" class="btn-img-action" :span="8">
+							<el-col v-if="!(isReview || caseInfo.dateMark_At)" class="btn-img-action" :span="8">
 								<el-button type="success" size="mini" @click="screenshot(imgType)">截圖</el-button>
 								<el-button v-if="caseInfo[imgType].length > 0" type="danger" size="mini" @click="caseInfo[imgType] = ''">刪除</el-button>
 							</el-col>
@@ -89,13 +103,17 @@
 					</el-form-item>
 				</el-form>
 				<el-button-group class="btn-action-group">
-					<el-button v-if="!isReview" :type="caseInfo.isPrev ? 'primary' : 'success'" @click="uploadCase()" :loading="isUpload">{{ caseInfo.isPrev ? '追蹤' : '新增' }}</el-button>
-					<el-button type="danger" @click="clearAll(); resetCaseHotSpot();" :disabled="isUpload">{{ isReview ? '關閉' : '清除' }}</el-button>
+					<el-button v-if="!(isReview || caseInfo.dateMark_At)" :type="caseInfo.isPrev ? 'primary' : 'success'" @click="uploadCase(1)" :loading="isUpload">{{ caseInfo.isPrev || caseInfo.trackingId != 0 ? '追蹤' : '新增' }}</el-button>
+					<el-button v-if="!(isReview || caseInfo.dateMark_At) && (caseInfo.isPrev || caseInfo.trackingId != 0)" type="warning" @click="uploadCase(2)" :loading="isUpload">完工</el-button>
+					<el-button v-if="!(isReview || caseInfo.dateMark_At) && (caseInfo.isPrev || caseInfo.trackingId != 0)" type="info" @click="uploadCase(0)" :loading="isUpload">誤判</el-button>
+					<el-button type="danger" @click="clearAll(); resetCaseHotSpot();" :disabled="isUpload">{{ (isReview || caseInfo.dateMark_At) ? '關閉' : '清除' }}</el-button>
 				</el-button-group>
 			</el-card>
 
 			<el-button class="btn-forward" size="mini" round plain @click="forwardPanorama"><i class="el-icon-caret-top" /></el-button>
 			<el-button class="btn-backward" size="mini" round plain @click="backwardPanorama"><i class="el-icon-caret-bottom" /></el-button>
+
+			<el-button v-if="!isEdit" class="btn-exit" type="primary" size="mini" round @click="showPanorama = false">返回</el-button>
 		</div>
 	</div>
 </template>
@@ -125,17 +143,17 @@ const loader = new Loader(loaderOpt);
 export default {
 	name: "panoramaView",
 	props: {
+		isEdit: {
+			type: Boolean,
+			default: true,
+		},
 		loading: {
-			required: true,
-			type: Boolean
+			type: Boolean,
+			required: true
 		},
 		isUpload: {
-			required: true,
-			type: Boolean
-		},
-		listQuery: {
-			type: Object,
-			required: true
+			type: Boolean,
+			default: false
 		},
 		panoramaInfo: {
 			type: Object,
@@ -153,6 +171,7 @@ export default {
 	data() {
 		return {
 			localEnv: process.env.NODE_ENV == 'development',
+			showPanorama: true,
 			isGetAddress: false,
 			isAutoMove: false,
 			isAutoRotate: false,
@@ -181,6 +200,8 @@ export default {
 			caseInfo: {
 				dateReport: moment().startOf("d"),
 				trackingId: 0,
+				competentId: 1,
+				deviceType: Number(sessionStorage.deviceType) || 1,
 				distressType: "",
 				distressLevel: "",
 				millingLength: 0,
@@ -223,7 +244,7 @@ export default {
 			if(this.isAutoMove) {
 				await new Promise(r => setTimeout(r, delay));
 				this.panorama.stopAutoRotate();
-				const lineInfoList = this.panoramaInfoProps.data.flat();
+				const lineInfoList = this.panoramaInfoProps.data.flat(2);
 				const sceneId = this.panorama.getScene();
 				const index = lineInfoList.map((el, index) => { if(el.fileName == sceneId) return index }).filter(el => el != undefined)[0];
 				this.showPanoramaLayer(lineInfoList[index+1].fileName);
@@ -231,6 +252,8 @@ export default {
 		});
 
 		this.panorama.on('mousedown', (evt) => {
+			if(!this.isEdit) return;
+
 			this.$emit('setHeading', this.panorama.getNorthOffset()+this.panorama.getYaw());
 			if(!evt.shiftKey) return;
 
@@ -270,10 +293,12 @@ export default {
 			this.calcCaseInfo();
 		});
 		this.panorama.on('mouseup', (evt) => {
+			if(!this.isEdit) return;
+
 			this.$emit('setHeading', this.panorama.getNorthOffset()+this.panorama.getYaw());
 		});
 		this.panorama.on('animatefinished', () => {
-			const panoramaInfo = Object.values(this.panoramaInfoProps.data).flat().filter(l => l.fileName == this.panorama.getScene())[0];
+			const panoramaInfo = Object.values(this.panoramaInfoProps.data).flat(2).filter(l => l.fileName == this.panorama.getScene())[0];
 			this.panoramaTestInfo = { Pitch: this.panorama.getPitch(), Yaw: this.panorama.getYaw(), Hfov: this.panorama.getHfov(), position: panoramaInfo.position };
 			this.$emit('setHeading', this.panorama.getNorthOffset()+this.panorama.getYaw());
 		});
@@ -309,28 +334,39 @@ export default {
 		});
 	},
 	methods: {
+		changeValue(caseInfo) {
+			if(caseInfo.lane) caseInfo.lane = caseInfo.lane.replace(/[^\d]/g,''); 
+			if(caseInfo.lane <= 1) caseInfo.lane = 1; 
+			if(caseInfo.lane >= 5) caseInfo.lane = 5; 
+		},
+		changeDeviceType() {
+			this.caseInfo.distressType = ''; 
+			sessionStorage.deviceType = this.caseInfo.deviceType
+		},
 		setHeading() {
 			this.$emit('setHeading', this.panorama.getNorthOffset()+this.panorama.getYaw());
 		},
-		setStreetViewList() {
+		async setStreetViewList() {
 			// console.log("setStreetViewList");
 			// console.log(JSON.parse(JSON.stringify(this.panoramaInfo)));
 			// this.panoramaInfoProps.streetViewList = {};
 			// console.log(JSON.parse(JSON.stringify(this.panoramaInfoProps)));
 
 			const lineInfoList = this.panoramaInfoProps.data;
-			const panoramaUrl = this.panoramaInfoProps.sceneSetting.assetsUrl;
 
-			for (const lineInfo of lineInfoList) {
+			for (const [index, lineInfos] of lineInfoList.entries()) {
+				const panoramaInfo = this.panoramaInfoProps.sceneSetting[index];
+				const lineInfo = lineInfos.flat(1);
+
 				lineInfo.forEach((info, index) => {
-					const panoramaPhotoUrl = `${panoramaUrl}/${info.fileName}`;
+					const panoramaPhotoUrl = `${panoramaInfo.assetsUrl}/${info.fileName}`;
 
 					this.panoramaInfoProps.streetViewList[info.fileName] = {
 						type: "equirectangular",
 						panorama: panoramaPhotoUrl,
-						hfov: this.panoramaInfoProps.sceneSetting.hfov,
-						yaw: this.panoramaInfoProps.sceneSetting.yaw,
-						horizonRoll: this.panoramaInfoProps.sceneSetting.horizonRoll,
+						hfov: panoramaInfo.hfov,
+						yaw: panoramaInfo.yaw,
+						horizonRoll: panoramaInfo.horizonRoll,
 						compass: true,
 						northOffset: info.azimuth,
 						autoLoad: true,
@@ -341,18 +377,20 @@ export default {
 						if(clickHandlerArgs) {
 							this.clearHotSpot(clickHandlerArgs.sceneIdNow);
 							this.$emit('setMarkerPosition', clickHandlerArgs.sceneIdNow);
+							sessionStorage.inspectIdNow = clickHandlerArgs.inspectIdNow;
 							localStorage.sceneIdNow = clickHandlerArgs.sceneIdNow;
 						}
 					};
 
 					if (index >= 0 && index < lineInfo.length - 1) {
 						hotSpots.push({
-							pitch: this.panoramaInfoProps.sceneSetting.pitch,
-							yaw: this.panoramaInfoProps.sceneSetting.yaw,
+							pitch: panoramaInfo.pitch,
+							yaw: panoramaInfo.yaw,
 							type: "scene",
 							text: lineInfo[index + 1].fileName,
 							sceneId: lineInfo[index + 1].fileName,
 							clickHandlerArgs: {
+								inspectIdNow: panoramaInfo.inspectId,
 								sceneIdNow: lineInfo[index + 1].fileName
 							},
 							clickHandlerFunc
@@ -361,13 +399,14 @@ export default {
 
 					if (index > 0 && index < lineInfo.length) {
 						hotSpots.push({
-							pitch: this.panoramaInfoProps.sceneSetting.pitch,
-							yaw: this.panoramaInfoProps.sceneSetting.yaw + 180,
+							pitch: panoramaInfo.pitch,
+							yaw: panoramaInfo.yaw + 180,
 							type: "scene",
 							text: lineInfo[index - 1].fileName,
 							sceneId: lineInfo[index - 1].fileName,
-							targetYaw: this.panoramaInfoProps.sceneSetting.yaw + 180,
+							targetYaw: panoramaInfo.yaw + 180,
 							clickHandlerArgs: {
+								inspectIdNow: panoramaInfo.inspectId,
 								sceneIdNow: lineInfo[index - 1].fileName
 							},
 							clickHandlerFunc
@@ -378,12 +417,16 @@ export default {
 					this.$emit('update:panoramaInfo',this.panoramaInfoProps);
 				});
 			}	
+
+			this.setPanoramaScene();
 		},
 		removeAllScene() {
 			for (const sceneId of this.prevSceneId) this.panorama.removeScene(sceneId);
 			this.prevSceneId = [];
 		},
 		setPanoramaScene() {
+			// console.log("setPanoramaScene");
+			// console.log(JSON.parse(JSON.stringify(this.panoramaInfo)));
 			this.removeAllScene();
 
 			// 掛載panorama scene
@@ -395,17 +438,18 @@ export default {
 		},
 		showPanoramaLayer(sceneId) {
 			// console.log("showPanoramaLayer");
+			this.clearHotSpot();
 			this.$emit("showPanoramaLayer", sceneId);
 		},
 		forwardPanorama() {
-			const lineInfoList = this.panoramaInfoProps.data.flat();
+			const lineInfoList = this.panoramaInfoProps.data.flat(2);
 			const sceneId = this.panorama.getScene();
 			const index = lineInfoList.map((el, index) => { if(el.fileName == sceneId) return index }).filter(el => el != undefined)[0];
 			if(index == lineInfoList.length - 1) return;
 			else this.showPanoramaLayer(lineInfoList[index+1].fileName);
 		},
 		backwardPanorama() {
-			const lineInfoList = this.panoramaInfoProps.data.flat();
+			const lineInfoList = this.panoramaInfoProps.data.flat(2);
 			const sceneId = this.panorama.getScene();
 			const index = lineInfoList.map((el, index) => { if(el.fileName == sceneId) return index }).filter(el => el != undefined)[0];
 			if(index == 0) return;
@@ -418,36 +462,60 @@ export default {
 			} else this.panorama.stopAutoRotate();
 		},
 		trackingCase() {
-			const caseFilter = this.caseGeoJson.casePrev.features.filter(caseSpec => caseSpec.properties.Id == Number(this.caseInfo.trackingId));
-
+			this.caseInfo.trackingId = Number(this.caseInfo.trackingId);
+			if(Number(this.caseInfo.trackingId) == 0) return;
+			const caseFilter = this.caseGeoJson.casePrev.features.filter(caseSpec => caseSpec.properties.Id == Number(this.caseInfo.trackingId) || caseSpec.properties.TrackingId == Number(this.caseInfo.trackingId));
 			if(caseFilter.length > 0) {
 				const caseSpec = caseFilter[0].properties;
+				const deviceType = Object.keys(this.options.caseTypeMap).filter(key => Object.keys(this.options.caseTypeMap[key]).map(key => Number(key)).includes(caseSpec.DistressType))[0];
 				this.caseInfo = Object.assign({}, this.caseInfo, {
+					id: Number(caseSpec.Id),
+					trackingId: Number(caseSpec.TrackingId) || Number(this.caseInfo.trackingId),
+					competentId: Number(caseSpec.competentId) || 1,
+					deviceType: Number(deviceType),
 					distressType: Number(caseSpec.DistressType),
 					distressLevel: Number(caseSpec.DistressLevel),
+					millingLength: Math.round(caseSpec.MillingLength * 100) / 100,
+					millingWidth: Math.round(caseSpec.MillingWidth * 100) / 100,
+					millingArea: Math.round(caseSpec.MillingArea * 100) / 100,
 					place: caseSpec.Place,
 					direction: caseSpec.Direction,
 					lane: caseSpec.Lane,
-					isPrev: caseSpec.isPrev
+					coordinates: caseSpec.Coordinates,
+					isPrev: caseSpec.isPrev,
+					markType: caseSpec.MarkType,
+					dateMark_At: caseSpec.DateMark_At
 				});
 			} else {
 				this.$message({
 					message: "查無此追蹤Id",
-					type: "error",
+					type: "error"
 				});
 			}
 		},
-		uploadCase() {
-			this.$confirm(`確定上傳缺失?`, "確認", { showClose: false }).then(() => {
+		uploadCase(uploadType = 1) {
+			this.$confirm(`確定${uploadType == 1 ? '上傳缺失' : uploadType == 2 ? '標記完工' : '標記誤判'}?`, "確認", { showClose: false }).then(() => {
+				if (this.caseInfo.place.length == 0) {
+					this.$message({ message: "請填入地址", type: "error" });
+					return;
+				}
+				
 				this.$emit('update:loading', true);
 				this.$emit('update:isUpload', true);
+				this.caseInfo.uploadType = uploadType;
 
-				let coordinates = this.hotSpotIdList.dot.map(hotSpot => ([hotSpot.coordinates.lng, hotSpot.coordinates.lat]));
-				if(this.caseInfo.distressType != 29) coordinates.push(coordinates[0]);
+				let coordinates = uploadType == 1 ? this.hotSpotIdList.dot.map(hotSpot => ([hotSpot.coordinates.lng, hotSpot.coordinates.lat])) : this.caseInfo.coordinates;
+				if(coordinates.length == 0) {
+					this.$message({ message: "請標記案件位置", type: "error" });
+					return;
+				}
+
+				if(uploadType == 1 && ![29, 70, 101].includes(this.caseInfo.distressType)) coordinates.push(coordinates[0]);
+
 				// console.log(coordinates);
 				this.caseInfo.geoJson = {
-					"type": this.caseInfo.distressType == 29 ? "MultiLineString" : 'MultiPolygon',
-					"coordinates": this.caseInfo.distressType == 29 ? [ coordinates ] : [[ coordinates ]]
+					"type": [70, 101].includes(this.caseInfo.distressType) ? 'MultiPoint' : this.caseInfo.distressType == 29 ? "MultiLineString" : 'MultiPolygon',
+					"coordinates": [70, 101].includes(this.caseInfo.distressType) ? [ coordinates[0] ] :  this.caseInfo.distressType == 29 ? [ coordinates ] : [[ coordinates ]]
 				};
 				// console.log(this.caseInfo);
 
@@ -456,14 +524,16 @@ export default {
 		},
 		// 估算長度 & 面積
 		calcCaseInfo() {
-			if(this.caseInfo.distressType == 29 && this.hotSpotIdList.dot.length >= 2) {
+			if ([70, 101].includes(this.caseInfo.distressType)) {
+				this.caseInfo.millingLength = 0;
+				this.caseInfo.millingWidth = 0;
+			} else if(this.caseInfo.distressType == 29 && this.hotSpotIdList.dot.length >= 2) {
 				this.caseInfo.millingLength =  this.hotSpotIdList.dot.reduce((acc, cur, index, array) => {
 					if(array[index + 1] == undefined) return Math.round(acc * 100) / 100;
 					return acc += calcDistance(cur.coordinates, array[index + 1].coordinates);
 				}, 0)
 				this.caseInfo.millingWidth = 0;
-			}
-			if(this.caseInfo.distressType != 29 && this.hotSpotIdList.dot.length >= 4) {
+			} else {
 				const distanceList = this.hotSpotIdList.dot.reduce((acc, cur, index, array) => {
 					const nextIndex = (index + 1) % array.length;
 					const distance = calcDistance(cur.coordinates, array[nextIndex].coordinates);
@@ -522,6 +592,8 @@ export default {
 			});
 		},
 		screenshot(imgType="imgZoomIn", hfov) {
+			if(imgType.includes('unMark')) this.caseInfo.pt_unMark = { type: this.caseInfo.distressType, level: this.caseInfo.distressLevel, point: [] };
+
 			hfov = (hfov != undefined) ? hfov : this.panorama.getHfov();
 			this.panorama.setHfov(hfov, 100, () => {
 
@@ -574,17 +646,21 @@ export default {
 						const { x: x_el, y: y_el, width: width_el, height: height_el } = dom.getBoundingClientRect();
 						const [ x, y ] = [ (x_el - x_bg + width_el/2) * ratio_width, (y_el - y_bg + height_el/2) * ratio_height ];
 						// console.log(x, y);
-						if(index == 0) canvasContext.moveTo(x, y);
+						if(imgType.includes('unMark')) this.caseInfo.pt_unMark.point.push({ x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 });
+
+						if(hotSpotIdOrder.length == 1) canvasContext.arc(x, y, 2, 0, 2 * Math.PI, true);
+						else if(index == 0) canvasContext.moveTo(x, y);
 						else canvasContext.lineTo(x, y);
 					}
-					if(this.caseInfo.distressType != 29) canvasContext.closePath();
-					canvasContext.stroke();
+					if(![29].includes(this.caseInfo.distressType)) canvasContext.closePath();
+					if(!imgType.includes('unMark')) canvasContext.stroke();
 					
 					// 產出jpg
 					html2canvas(containerDom, { canvas, backgroundColor: 'rgba(0, 0, 0, 0)', width: canvas.width, height: canvas.height, scale  }).then(canvas => {
 						this.caseInfo[imgType] = canvas.toDataURL("image/jpeg", 0.8);
 
-						if(imgType == "imgZoomIn" && this.caseInfo.imgZoomOut.length == 0) this.screenshot("imgZoomOut", this.panorama.getHfov()+30);
+						if(imgType == "imgZoomIn") this.screenshot("imgZoomIn_unMark");
+						if(imgType == "imgZoomIn_unMark" && this.caseInfo.imgZoomOut.length == 0) this.screenshot("imgZoomOut", this.panorama.getHfov()+30);
 						// NOTE: test download
 						// const link = document.createElement('a');
 						// link.href = canvas.toDataURL("image/jpeg");
@@ -621,7 +697,7 @@ export default {
 			return angle;
 		},
 		getCoords(position) {
-			const panoramaInfo = Object.values(this.panoramaInfoProps.data).flat().filter(l => l.fileName == this.panorama.getScene())[0];
+			const panoramaInfo = Object.values(this.panoramaInfoProps.data).flat(2).filter(l => l.fileName == this.panorama.getScene())[0];
 			// console.log(panoramaInfo);
 			const yaw = this.getYaw(panoramaInfo.position, position) - panoramaInfo.azimuth;
 			const pitch = this.getPitch(panoramaInfo.position, position, 0);
@@ -669,7 +745,7 @@ export default {
 				pitch,
 				yaw,
 				// text: hoverText,
-				cssClass: `hotSpotIcon alert ${isPrev ? "prev" : ""} caseId_${prop.Id}`,
+				cssClass: `hotSpotIcon alert ${prop.DateMark_At && prop.MarkType == 2 ? "repair" : prop.DateMark_At && prop.MarkType == 0 ? "delete" : !isPrev && prop.TrackingId ? "track" : isPrev ? "prev" : ""} caseId_${prop.Id}`,
 				createTooltipArgs: {
 					prop
 				},
@@ -685,10 +761,15 @@ export default {
 					isPrev
 				},
 				clickHandlerFunc: (evt, clickHandlerArgs) => {
-					this.resetCaseHotSpot();
+					this.isReview = this.isEdit ? !clickHandlerArgs.isPrev : true;
 
+					const deviceType = Object.keys(this.options.caseTypeMap).filter(key => Object.keys(this.options.caseTypeMap[key]).map(key => Number(key)).includes(clickHandlerArgs.prop.DistressType))[0];
 					this.caseInfo = Object.assign({}, this.caseInfo, {
-						trackingId: clickHandlerArgs.prop.TrackingId || prop.Id,
+						id: clickHandlerArgs.prop.Id,
+						dateReport: (this.isReview || clickHandlerArgs.prop.DateMark_At) ? clickHandlerArgs.prop.DateReport : moment().startOf("d"),
+						trackingId: clickHandlerArgs.prop.TrackingId || clickHandlerArgs.prop.Id,
+						competentId: Number(clickHandlerArgs.prop.CompetentId) || 1,
+						deviceType: Number(deviceType),
 						distressType: Number(clickHandlerArgs.prop.DistressType),
 						distressLevel: Number(clickHandlerArgs.prop.DistressLevel),
 						millingLength: Math.round(clickHandlerArgs.prop.MillingLength * 100) / 100 ,
@@ -698,20 +779,21 @@ export default {
 						direction: clickHandlerArgs.prop.Direction,
 						lane: clickHandlerArgs.prop.Lane,
 						isPrev: clickHandlerArgs.isPrev,
-						imgZoomIn: clickHandlerArgs.isPrev || !clickHandlerArgs.prop.ImgZoomIn ? "" : clickHandlerArgs.prop.ImgZoomIn,
-						imgZoomOut: clickHandlerArgs.isPrev || !clickHandlerArgs.prop.ImgZoomOut ? "" : clickHandlerArgs.prop.ImgZoomOut
+						markType: clickHandlerArgs.prop.MarkType,
+						dateMark_At: clickHandlerArgs.prop.DateMark_At,
+						imgZoomIn: !clickHandlerArgs.prop.DateMark_At && (clickHandlerArgs.isPrev || !clickHandlerArgs.prop.ImgZoomIn) ? "" : clickHandlerArgs.prop.ImgZoomIn,
+						imgZoomOut: !clickHandlerArgs.prop.DateMark_At && (clickHandlerArgs.isPrev || !clickHandlerArgs.prop.ImgZoomOut) ? "" : clickHandlerArgs.prop.ImgZoomOut,
+						coordinates: clickHandlerArgs.prop.Coordinates
 					});
 
-					if(clickHandlerArgs.isPrev) {
-						for(const point of clickHandlerArgs.prop.Coordinates) {
-							const coordinates = { lat: point[1], lng: point[0] };
-							const hotSpot = this.addDotHotSpot(this.getCoords(coordinates), 1);
-							hotSpot.coordinates = coordinates;
-						}
-					} 
-
-					this.isReview = !clickHandlerArgs.isPrev;
-					this.isSticky = !this.isSticky; 
+					// if(clickHandlerArgs.isPrev) {
+					// 	for(const point of clickHandlerArgs.prop.Coordinates) {
+					// 		const coordinates = { lat: point[1], lng: point[0] };
+					// 		const hotSpot = this.addDotHotSpot(this.getCoords(coordinates), 1);
+					// 		hotSpot.coordinates = coordinates;
+					// 	}
+					// } 
+					this.isSticky = true; 
 				}
 			};
 
@@ -722,8 +804,8 @@ export default {
 			this.clearAll();
 
 			if(this.panoramaInfoProps.data.length == 0) return;
-			const panoramaInfo = Object.values(this.panoramaInfoProps.data).flat().filter(l => l.fileName == this.panorama.getScene())[0];
-			// if(!panoramaInfo) return;
+			const panoramaInfo = Object.values(this.panoramaInfoProps.data).flat(2).filter(l => l.fileName == this.panorama.getScene())[0];
+			if(!panoramaInfo) return;
 
 			for(const caseType in this.caseGeoJson) {
 				for(const caseSpec of this.caseGeoJson[caseType].features) {
@@ -766,8 +848,11 @@ export default {
 			this.isReview = false;
 			this.isSticky = false;
 			this.caseInfo = {
+				Id: 0,
 				dateReport: moment().startOf("d"),
 				trackingId: 0,
+				competentId: 1,
+				deviceType: Number(sessionStorage.deviceType) || 1,
 				distressType: "",
 				distressLevel: "",
 				millingLength: 0,
@@ -785,7 +870,7 @@ export default {
 		// NOTE: 預估缺失位置(詹博)
 		transformMatrix(pitch, yaw) {
 			// NOTE: test Transform - Omega(roll): X軸旋轉; Phi(yaw): Y軸旋轉; Kappa(pitch): Z軸旋轉
-			const panoramaInfo = Object.values(this.panoramaInfoProps.data).flat().filter(l => l.fileName == this.panorama.getScene())[0];
+			const panoramaInfo = Object.values(this.panoramaInfoProps.data).flat(2).filter(l => l.fileName == this.panorama.getScene())[0];
 			const [ Omega, Phi, Kappa ] = [ 0, panoramaInfo.azimuth * Math.PI / 180, 0 ];
 			// const [ Omega, Phi, Kappa ] = [ 0, 0, 0 ];
 
@@ -867,6 +952,11 @@ export default {
 			cursor: pointer
 			right: 10px
 			bottom: 114px
+		.btn-exit
+			position: absolute
+			right: 10px
+			top: 50px
+			z-index: 11
 		.btn-forward, .btn-backward
 			position: absolute
 			right: 18px
@@ -912,9 +1002,18 @@ export default {
 				background-size: 100% 
 				filter: drop-shadow(0px 0px 3px red)
 				z-index: 10
+				&.repair
+					background-image: url('../../../public/assets/icon/icon-alert-circle.png')
+					filter: drop-shadow(0px 0px 2px LightCoral)
+				&.delete
+					background-image: url('../../../public/assets/icon/close-circle-custom.png')
+					filter: drop-shadow(0px 0px 2px LightCoral)
 				&.prev
 					background-image: url('../../../public/assets/icon/icon_alert_plus.png')
-					filter: drop-shadow(0px 0px 2px tomato)
+					filter: drop-shadow(0px 0px 2px Tomato)
+				&.track
+					background-image: url('../../../public/assets/icon/icon_alert_orange.png')
+					filter: drop-shadow(0px 0px 2px Tomato)
 				&.highlight
 					transform: scale(1.5)
 					border: 1px solid #fff
@@ -953,7 +1052,7 @@ export default {
 			background-color: rgba(white, 0.6)
 			z-index: 11
 			&.right
-				top: 60px
+				top: 42px
 				right: 15px
 			.el-card__body
 				position: relative
@@ -963,6 +1062,7 @@ export default {
 				overflow-y: auto
 				.el-form-item
 					margin-bottom: 10px
+					user-select: text
 					.el-form-item__label
 						line-height: auto
 					.el-select, .road-dir, .el-textarea, .el-date-editor
@@ -971,6 +1071,9 @@ export default {
 							padding: 5px 0
 						.el-input__inner
 							text-align: center
+					.el-input.track-highlight .el-input__inner
+						border: 1px solid #67C23A
+						background-color: rgba(#67C23A, 1)
 					.btn-img-action
 						display: flex
 						flex-direction: column
@@ -988,21 +1091,4 @@ export default {
 						padding: 10px 0
 				.road-dir > .el-input-group__prepend .el-select
 						width: 100px
-	.btn_panorama
-		position: absolute
-		bottom: 40px
-		left: 40px
-		height: 80px
-		background-color: white
-		background-color: #E1F5FE
-		overflow: hidden
-		padding: 5px
-		z-index: 15
-		.v-btn__content
-			display: flex
-			flex-direction: column
-		.name
-			white-space: pre-wrap
-			text-align: center
-			font-size: 14px
 </style>

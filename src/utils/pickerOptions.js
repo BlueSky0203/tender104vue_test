@@ -1,6 +1,6 @@
 import moment from 'moment'
 
-export function pickerOptions(shortcutType = 'year', dateStart, hasWeek = true, disabledDate = true) {
+export function pickerOptions(shortcutType = 'year', dateStart, hasWeek = true, hasYear = true, disabledDate = true) {
 	const shortcutDetail = {
 		TODAY: {
 			key: "TODAY",
@@ -67,7 +67,7 @@ export function pickerOptions(shortcutType = 'year', dateStart, hasWeek = true, 
 		THIS_YEAR:{
 			key: "THIS_YEAR",
 			text: "今年",
-			disabled: false,
+			disabled: !hasYear,
 			onClick(picker) {
 				const end = moment().endOf("year");
 				const start = moment().startOf("year");
@@ -109,7 +109,7 @@ export function dateWatcher(dateStart, dateRange) {
 	} 
 }
 
-export function dateShortcuts(index, shortcutType = 'year', dateStart, hasWeek = true) {
+export function dateShortcuts(index, shortcutType = 'year', dateStart, hasWeek = true, hasYear = true) {
 	const DATE_OPTION = {
 		TODAY: -1,
 		YESTERDAY: -1,
@@ -120,7 +120,7 @@ export function dateShortcuts(index, shortcutType = 'year', dateStart, hasWeek =
 		THIS_YEAR: -1
 	}
 
-	const shortcuts = pickerOptions(shortcutType, dateStart, hasWeek).shortcuts;
+	const shortcuts = pickerOptions(shortcutType, dateStart, hasWeek, hasYear).shortcuts;
 	shortcuts.forEach((option, index) => DATE_OPTION[option.key] = index);
 
 	const offsetWeek = moment().day() != 0 ? 0 : 1;

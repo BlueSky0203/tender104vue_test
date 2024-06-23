@@ -8,29 +8,66 @@ const carRouter = {
 	redirect: '/car/route',
 	name: 'car',
 	meta: {
-		title: '車輛管理',
+		title: '道路巡視',
 		icon: 'el-icon-truck',
-		roles: ['car'],
-		isNew: true 
+		roles: ['car']
 	},
 	children: [
+		{
+			path: 'route',
+			component: () => import('@/views/car/route'),
+			name: 'carRoute',
+			meta: {
+				title: '巡視路線(車輛)',
+				roles: ['car.route']
+			}
+		},
+		{
+			path: 'routeMap',
+			component: () => import('@/views/car/routeMap'),
+			name: 'carRouteMap',
+			meta: {
+				title: '巡視路線(分隊)',
+				roles: ['car.route']
+			}
+		},
+		{
+			path: 'classification',
+			component: () => import('@/views/car/classification'),
+			name: 'caseClassification',
+			meta: {
+				title: '巡視分案',
+				roles: ['car.route'],
+				vTag: 'alpha'
+			}
+		},
+		{
+			path: 'caseListLog',
+			component: () => import('@/views/car/caseListLog'),
+			name: 'caseListLog',
+			meta: {
+				title: '1999',
+				roles: ['car.route'],
+				vTag: 'alpha'
+			}
+		},
+		{
+			path: 'pothole',
+			component: () => import('@/views/car/pothole'),
+			name: 'pothole',
+			meta: {
+				title: '坑洞缺失',
+				roles: ['car.route'],
+				vTag: 'alpha'
+			}
+		},
 		{
 			path: 'monitor',
 			component: () => import('@/views/car/monitor'),
 			name: 'carMonitor',
 			meta: {
-				title: '即時影像',
-				roles: ['car.viewer'],
-				isNew: true 
-			}
-		},
-		{
-			path: 'route',
-			component: () => import('@/views/car/route'),
-			name: 'carRoute',
-			meta: { 
-				title: '車巡管理',
-				roles: ['car.route']
+				title: '巡視影像',
+				roles: ['car.viewer']
 			}
 		}
 	]

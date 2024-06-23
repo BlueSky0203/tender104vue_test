@@ -315,7 +315,7 @@ export default {
 			else return row[column.property];
 		},
 		formatTime(time) {
-			return moment(time).utc().format("YYYY-MM-DD");
+			return moment(time).format("YYYY-MM-DD");
 		},
 		handleDownload() {
 			let tHeader = Object.values(this.headers);

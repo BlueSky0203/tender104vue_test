@@ -77,11 +77,11 @@ export default {
           sortable: false,
           width:200
         },
-				UserId: {
-					name: "User ID",
-					sortable: false,
-					width:200
-				},
+				// UserId: {
+				// 	name: "User ID",
+				// 	sortable: false,
+				// 	width:200
+				// },
         UserName: {
           name: "使用者名稱",
           sortable: false,
@@ -111,7 +111,7 @@ export default {
   methods: {
     
     formatTime(time) {
-      return moment(time).add(8, 'hour').format("YYYY-MM-DD") + "\n" + moment(time).add(8, 'hours').format("HH:mm:ss");
+      return moment(time).format("YYYY-MM-DD") + "\n" + moment(time).format("HH:mm:ss");
     },
     getList() {
       this.loading = true;

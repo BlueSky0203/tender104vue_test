@@ -223,7 +223,7 @@
 				<template slot-scope="{ row }">
 					<span v-if="(row.State & 64)" style="color: #67C23A">同意</span>
 					<span v-else-if="(row.State & 4)" style="color: #F56C6C">反對</span>
-					<template v-else-if="checkPermission(['PIcase.supervisor']) && (row.State & 16) && (row.State & 32)">
+					<template v-else-if="checkPermission(['PIcase.supervisor']) && ((row.State & 16) && (row.State & 32))">
 						<el-button-group>
 							<el-button  :type="'success'" size="mini" @click="beforeSetResult(row, Number(64))">同意</el-button>
 							<el-button  :type="'danger'" size="mini" @click="beforeSetResult(row, Number(4))">反對</el-button>
@@ -231,7 +231,7 @@
 					</template>
 					<template v-else> - </template>
 
-					<template v-if="checkPermission(['PIcase.supervisor']) && (row.State & 4) || (row.State & 64)">
+					<template v-if="checkPermission(['PIcase.supervisor']) && ((row.State & 4) || (row.State & 64))">
 						<el-button class="btn-revoke" size="mini" plain round @click="beforeSetResult(row,-1)">撤銷</el-button>
 					</template>
 				</template>

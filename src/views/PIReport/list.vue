@@ -7,7 +7,7 @@
 			</el-select>
 			<span class="filter-item">
 				<div style="font-size: 12px; color: #909399">報告日期</div>
-				<time-picker class="filter-item" shortcutType="day" :timeTabId.sync="timeTabId" :dateRange.sync="dateRange" @search="getList"/>
+				<time-picker class="filter-item" shortcutType="day" :timeTabId.sync="timeTabId" :dateRange.sync="dateRange" :disabledDate="false" @search="getList"/>
 			</span>
 
 			<el-button class="filter-item" type="primary" icon="el-icon-search" @click="getList()">搜尋</el-button>
@@ -523,11 +523,13 @@ export default {
 			const add_arrayBuffer_32Att1 = await this.$refs.PI32Att1.getPDF();
 			
 			let add_pdfUint8_32Att2Arr = [ await this.$refs.PI32Att2.getPDF() ];
-			for(const caseSpec of this.perfPagesObj[302][2]) {
-				const { id, initPage, perfPages } = caseSpec;
-				await this.$refs.PI32Att2.setData(id, false, initPage, perfPages);
-				// await new Promise(r => setTimeout(r, 1500));
-				add_pdfUint8_32Att2Arr.push(await this.$refs.PI32Att2.getPDF());
+			if(this.perfPagesObj[302] && this.perfPagesObj[302][2]) {
+				for (const caseSpec of this.perfPagesObj[302][2]) {
+					const { id, initPage, perfPages } = caseSpec;
+					await this.$refs.PI32Att2.setData(id, false, initPage, perfPages);
+					// await new Promise(r => setTimeout(r, 1500));
+					add_pdfUint8_32Att2Arr.push(await this.$refs.PI32Att2.getPDF());
+				}
 			}
 			// console.log(add_pdfUint8_32Att2Arr);
 
@@ -611,8 +613,7 @@ export default {
 			})
 		},
 		formatDate(date){
-			const momentDate = moment(date);
-			return momentDate.isValid() ? momentDate.format('YYYY-MM-DD') : "-";
+			return moment(date).isValid() ? moment(date).format('YYYY-MM-DD') : "-";
 		},
 	}
 };

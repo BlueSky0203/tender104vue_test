@@ -21,6 +21,8 @@
 			:picker-options="pickerOptions"
 			:default-time="['00:00:00', '23:59:59']"
 			:clearable="false"
+			size="mini"
+			style="width: 210px;"
 			@change="timeTabIdProps = -1"
 		/>
 		<el-button
@@ -58,6 +60,10 @@ export default {
 			type: Boolean,
 			default: true
 		},
+		hasYear: {
+			type: Boolean,
+			default: true
+		},
 		shortcutType: {
 			type: String,
 			default: 'year'
@@ -74,7 +80,7 @@ export default {
 	data() {
 		return {
 			dateTimePickerVisible: false,
-			pickerOptions: pickerOptions(this.shortcutType, this.dateStart, this.hasWeek, this.disabledDate),
+			pickerOptions: pickerOptions(this.shortcutType, this.dateStart, this.hasWeek, this.hasYear, this.disabledDate),
 		}
 	},
 	computed: {
@@ -103,7 +109,7 @@ export default {
 	methods: {
 		dateShortcuts(index, shortcutType) {
 			this.timeTabIdProps = index;
-			this.dateRangeProps = dateShortcuts(index, shortcutType, this.dataStart, this.hasWeek);
+			this.dateRangeProps = dateShortcuts(index, shortcutType, this.dataStart, this.hasWeek, this.hasYear);
 			this.$emit('update:pageCurrent', 1);
 			this.$emit('search');
 		}
@@ -112,6 +118,9 @@ export default {
 </script>
 
 <style lang="sass">
+	.time-picker
+		.el-input__icon.el-range__close-icon
+			display: none
 	.time-picker > *
 		margin-right: 5px
 </style>

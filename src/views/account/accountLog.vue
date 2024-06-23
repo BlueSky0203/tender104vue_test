@@ -43,8 +43,6 @@
 
       </el-table-column>
     </el-table>
-
-
 		<pagination :total="total" :pageCurrent.sync="listQuery.pageCurrent" :pageSize.sync="listQuery.pageSize" @pagination="getList" />
   </div>
 </template>
@@ -85,13 +83,13 @@ export default {
           sortable: false,
           width:100
         },
-				UserId: {
-					name: "User ID",
-					sortable: false,
-					width:100
-				},
+				// UserId: {
+				// 	name: "User ID",
+				// 	sortable: false,
+				// 	width:100
+				// },
         UserName: {
-          name: "使用者名稱",
+          name: "帳號",
           sortable: false,
           width:150
         },
@@ -100,11 +98,11 @@ export default {
           sortable: false,
           width: 150
         },
-				FromUid: {
-					name: "FromUid",
-					sortable: false,
-					width:150
-				},
+				// FromUid: {
+				// 	name: "FromUid",
+				// 	sortable: false,
+				// 	width:150
+				// },
 				Create_At: {
 					name: "創建日期",
 					sortable: false,
@@ -134,7 +132,7 @@ export default {
   methods: {
     
     formatTime(time) {
-      return moment(time).add(8, 'hour').format("YYYY-MM-DD") + "\n" + moment(time).add(8, 'hours').format("HH:mm:ss");
+      return moment(time).format("YYYY-MM-DD") + "\n" + moment(time).format("HH:mm:ss");
     },
     getList() {
       this.loading = true;
@@ -162,7 +160,6 @@ export default {
           this.loading = false
         })
         .catch((error) => this.loading = false);
-
     },
   },
 

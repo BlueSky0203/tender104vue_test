@@ -56,7 +56,7 @@ import { jsPDF } from 'jspdf';
 import { applyPlugin } from 'jspdf-autotable';
 applyPlugin(jsPDF);
 import { Viewer, BLANK_PDF } from '@pdfme/ui';
-import { getCaseList, getPerfContent, setPerfContent } from "@/api/PI";
+import { getCaseList, getInsCaseList, getPerfContent, setPerfContent } from "@/api/PI";
 import TimePicker from '@/components/TimePicker';
 import { dateWatcher } from "@/utils/pickerOptions";
 
@@ -166,7 +166,6 @@ export default {
 			inputs: {
 				companyName: '聖東營造股份有限公司',
 				formatDate:'',
-				dateYear:'',
 				zipCode: 104,
 				district: '中山區',
 				serialNumber: '',
@@ -296,26 +295,55 @@ export default {
 					zipCode: this.inputs.zipCode,
 					timeStart,
 					timeEnd
-				}).then(async (response) => {
-					if (response.data.list.length != 0) {
+				}).then((response1) => {
+					if (response1.data.resultList.length != 0) this.inputs.listNonAccepted = response1.data.resultList;
+					this.inputs.listNonAccepted.forEach(caseSpec => {
+						caseSpec.CaseDate = moment(caseSpec.CaseDate).format('MM/DD');
+						caseSpec.CaseNo = caseSpec.UploadCaseNo;
+						caseSpec.type = 1;
 
-						this.inputs.listNonAccepted = response.data.resultList;
-						this.inputs.listNonAccepted.forEach(caseSpec => {
-							caseSpec.CaseDate = moment(caseSpec.CaseDate).format('MM/DD');
-							if(caseSpec.State & 32) {
-								caseSpec.UploadCaseNoSV = caseSpec.UploadCaseNo;
-								caseSpec.StateNotesSV = caseSpec.StateNotes.SV;
-							}
+						if (caseSpec.State & 32) {
+							caseSpec.UploadCaseNoSV = caseSpec.UploadCaseNo;
+							caseSpec.StateNotesSV = caseSpec.StateNotes.SV;
+						}
 
-							if(caseSpec.State & 64) {
-								caseSpec.UploadCaseNoOrgan = caseSpec.UploadCaseNo;
-								caseSpec.StateNotesOrgan = caseSpec.StateNotes.Organ;
-							}
-						})
-					}
-					await this.previewPdf()
-					resolve();
-					this.loading = false;
+						if (caseSpec.State & 64) {
+							caseSpec.UploadCaseNoOrgan = caseSpec.UploadCaseNo;
+							caseSpec.StateNotesOrgan = caseSpec.StateNotes.Organ;
+						}
+					})
+
+					getInsCaseList({
+						zipCode: this.inputs.zipCode,
+						timeStart,
+						timeEnd
+					}).then(async (response2) => { 
+						if (response2.data.resultList.length != 0) {
+							const resultList = response2.data.resultList;
+							resultList.forEach(caseSpec => {
+								caseSpec.CaseDate = moment(caseSpec.DateUpload).format('MM/DD');
+								caseSpec.State = caseSpec.PIState;
+								caseSpec.type = 2;
+
+								if (caseSpec.PIState & 32) {
+									caseSpec.UploadCaseNoSV = caseSpec.CaseNo;
+									caseSpec.StateNotesSV = JSON.parse(caseSpec.PIStateNotes).SV;
+								}
+
+								if (caseSpec.PIState & 64) {
+									caseSpec.UploadCaseNoOrgan = caseSpec.CaseNo;
+									caseSpec.StateNotesOrgan = JSON.parse(caseSpec.PIStateNotes).Organ;
+								}
+							})
+
+							this.inputs.listNonAccepted.push(...resultList);
+							this.inputs.listNonAccepted.sort((a, b) => a.CaseNo - b.CaseNo);
+						}
+
+						await this.previewPdf()
+						resolve();
+						this.loading = false;
+					})
 				}).catch(err => { this.loading = false; });
 			})
 		},
@@ -354,12 +382,15 @@ export default {
 		},
 		async createPdf() {
 			return new Promise(async (resolve, reject) => {
-				const total = this.inputs.listNonAccepted.length;
-				const totalSV = this.inputs.listNonAccepted.filter(l => l.State & 32).length;
-				const totalOrgan = this.inputs.listNonAccepted.filter(l => l.State & 64).length;
+				const total = this.inputs.listNonAccepted.filter(l => l.type == 1).length;
+				const totalSV = this.inputs.listNonAccepted.filter(l => l.type == 1 && l.State & 32).length;
+				const totalOrgan = this.inputs.listNonAccepted.filter(l => l.type == 1 && l.State & 64).length;
+				const totalP = this.inputs.listNonAccepted.filter(l => l.type == 2).length;
+				const totalSVP = this.inputs.listNonAccepted.filter(l => l.type == 2 && l.State & 32).length;
+				const totalOrganP = this.inputs.listNonAccepted.filter(l => l.type == 2 && l.State & 64).length;
 
 				const splitTable = this.inputs.listNonAccepted.reduce((acc, cur) => {
-					const rowLimit = acc.length == 1 ? 22 : 25;
+					const rowLimit = acc.length == 1 ? 21 : 24;
 					if(acc[acc.length-1].length <= rowLimit) acc[acc.length-1].push(cur);
 					else acc.push([cur]);
 					return acc;
@@ -388,7 +419,7 @@ export default {
 					this.pdfDoc.autoTable({
 						theme: 'plain',
 						styles: { font: "edukai", fontSize: 12, lineWidth: 0.1, lineColor: 10 },
-						head: [[`機關或專案管理/監造抽查檢核後發現錯誤的案件數資訊: ${total} 件 (監造 ${totalSV}件 + 機關 ${totalOrgan}件)`]],
+						head: [[`機關或專案管理/監造抽查檢核後發現錯誤的案件數資訊:\n      自巡: ${total} 件 (監造 ${totalSV}件 + 機關 ${totalOrgan}件) ， 環景: ${totalP} 件 (監造 ${totalSVP}件 + 機關 ${totalOrganP}件)`]],
 						startY: this.pdfDoc.lastAutoTable.finalY,
 					})
 					this.pdfDoc.autoTable({
@@ -420,14 +451,14 @@ export default {
 		},
 		formatFormData(){
 			//日期格式
-			const checkDate = moment(this.checkDate).subtract(1911, 'year');
-			this.inputs.formatDate = checkDate.format("YYYY年MM月DD日").slice(1);
+			const checkDate = moment(this.checkDate).format("YYYY/MM/DD").split("/");
+			checkDate[0] = Number(checkDate[0]) - 1911;
+			this.inputs.formatDate = `${checkDate[0]}年${checkDate[1]}月${checkDate[2]}日`;
 			
-			const reportDate = moment(this.reportDate).subtract(1911, 'year');
-			//民國年份
-			this.inputs.dateYear = reportDate.year()
 			//紀錄編號
-			this.inputs.serialNumber = reportDate.format("YYYYMMDD02").slice(1) + String(this.initPage).padStart(2, '0');	
+			const reportDate = moment(this.reportDate).format("YYYY/MM/DD").split("/");
+			reportDate[0] = Number(reportDate[0]) - 1911;
+			this.inputs.serialNumber = reportDate.join("") + "02" + String(this.initPage).padStart(2, '0');	
 			//行政區
 			this.inputs.district = this.districtList[this.inputs.zipCode].name		
 		},
@@ -450,29 +481,17 @@ export default {
 		},
 		storeData(){
 			this.loading = true;
-			let imgObj = {}; 
-			let inputs = JSON.parse(JSON.stringify(this.inputs));
-
-			Object.keys(this.inputs).forEach(key => {
-				if(key.includes('Img')) {
-					imgObj[key] = this.inputs[key];
-					inputs[key] = "";
-				}
-			})
-
-
+			const inputs = JSON.parse(JSON.stringify(this.inputs));
 			const storedContent = {
 				initPage: this.initPage,
 				inputs
 			}
-			// console.log(storedContent, imgObj);
+			let uploadForm = new FormData();
+			uploadForm.append('checkDate', moment(this.checkDate).format("YYYY-MM-DD"));
+			uploadForm.append('pageCount', this.pdfDoc.internal.getNumberOfPages());
+			uploadForm.append('content', JSON.stringify(storedContent));
 
-			setPerfContent(this.listQuery.perfContentId,{
-				checkDate: moment(this.checkDate).format("YYYY-MM-DD"),
-				pageCount: this.pdfDoc.internal.getNumberOfPages(),
-				content: JSON.stringify(storedContent),
-				imgObj
-			}).then(response => {
+			setPerfContent(this.listQuery.perfContentId, uploadForm).then(response => {
 				if ( response.statusCode == 20000 ) {
 					this.$message({
 						message: "提交成功",
@@ -523,8 +542,7 @@ export default {
 			}
 		},
 		formatDate(date){
-			const momentDate = moment(date);
-			return momentDate.isValid() ? momentDate.format('YYYY-MM-DD') : "-";
+			return moment(date).isValid() ? moment(date).format('YYYY-MM-DD') : "-";
 		}
 	}
 }

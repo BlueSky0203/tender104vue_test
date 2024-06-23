@@ -363,7 +363,7 @@ export default {
 			else return row[column.property] || "-";
 		},
 		formatTime(time) {
-			return moment(time).utc().format("YYYY-MM-DD");
+			return moment(time).format("YYYY-MM-DD");
 		},
 		async handleDownload() {
 			let startDate = moment(this.dateRange[0]).format("YYYY-MM-DD");

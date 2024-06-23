@@ -38,7 +38,6 @@
 			<el-card>
 				<el-collapse>
 					<el-collapse-item class="collapse-label" title="鋪面狀況指數">
-						<!-- TODO: 關閉鋪面圖層 -->
 						<el-row slot="title">
 							<el-col :span="18">鋪面狀況指數</el-col>
 							<el-col :span="6">
@@ -322,7 +321,7 @@ export default {
 				this.listQuery.filterId = this.$route.query.roadName;
 			}
 			await getDistMap().then(response => this.options.districtMap = response.data.districtMap);
-			getTenderRound({ isMap: true }).then(response => {
+			getTenderRound({ isMap: true, excludeShadow: true }).then(response => {
 				this.options.tenderRoundMap = response.data.list.reduce((acc, cur) => {
 					let roundId = `${cur.tenderId}${String(cur.round).padStart(3, '0')}`;
 					if(cur.zipCodeSpec != 0) roundId += `${cur.zipCodeSpec}`;
@@ -810,7 +809,6 @@ export default {
 						return { 
 							icon: { 
 								url: `/assets/icon/icon_case_${caseLevelMap[feature.getProperty("caseLevel")]}.png`,
-								anchor: new google.maps.Point(5, 5),
 								scaledSize: new google.maps.Size(25, 25),
 							},
 							zIndex: feature.getProperty("isLine") ? 1000 - feature.getProperty("length") : 1000 - feature.getProperty("area")
@@ -843,9 +841,23 @@ export default {
 		changeTender() {
 			const zipCode = this.options.tenderRoundMap[this.listQuery.tenderRound].zipCode;
 
+			this.dataLayer.mask.setStyle(feature => {
+				// console.log(feature);
+				const condition = [1000].includes(zipCode);
+
+				return {
+					strokeColor: "#000000",
+					strokeWeight: 0,
+					strokeOpacity: 1,
+					fillColor: "#000000",
+					fillOpacity: condition ? 0 : 0.7,
+					zIndex: 0
+				}
+			});
+
 			this.dataLayer.district.setStyle(feature => {
 				// console.log(feature);
-				const condition = zipCode == 1001 || this.options.districtMap[zipCode].district.includes(feature.getProperty("TOWNNAME"));
+				const condition = [999, 1000, 1001, 1003].includes(zipCode) || this.options.districtMap[zipCode].district.includes(feature.getProperty("TOWNNAME"));
 
 				return {
 					strokeColor: "#827717",
@@ -871,10 +883,6 @@ export default {
 
 			// 載入case GeoJSON
 			const tenderRound = this.options.tenderRoundMap[this.listQuery.tenderRound];
-			const startDate = moment(tenderRound.roundStart).format("YYYY-MM-DD");
-			const endDate = moment(tenderRound.roundEnd).format("YYYY-MM-DD");
-			this.searchRange = startDate + " - " + endDate;
-			
 			if(this.caseSwitch) await this.getCaseGeo();
 			
 			// 載入區塊
@@ -964,11 +972,7 @@ export default {
 		},
 		async getCaseGeo() {
 			this.loading = true;
-
 			const tenderRound = this.options.tenderRoundMap[this.listQuery.tenderRound];
-			const startDate = moment(tenderRound.roundStart).format("YYYY-MM-DD");
-			const endDate = moment(tenderRound.roundEnd).format("YYYY-MM-DD");
-			this.searchRange = startDate + " - " + endDate;
 
 			return new Promise((resolve, reject) => {
 				getRoadCaseGeo({
@@ -1195,7 +1199,7 @@ export default {
 			else return row[column.property] || "-";
 		},
 		formatTime(time) {
-			return moment(time).local().format("YYYY-MM-DD HH:mm");
+			return moment(time).format("YYYY-MM-DD HH:mm");
 		}
 	},
 };

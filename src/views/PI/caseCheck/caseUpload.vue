@@ -116,7 +116,6 @@
 								size="mini"
 								:clearable="false"
 								value-format="yyyy/MM/dd"
-								@input="() => $set(list, $index, row)"
 							/>
 						</span>
 							<span v-else-if="[ 'CaseNo' ].includes(column.property)">
@@ -173,29 +172,6 @@
 			style="width: 100%"
 		>
 			<el-table-column label="序號" type="index" width="55" align="center" />
-			<!-- <el-table-column label="案件編號" prop="UploadCaseNo" :sortable="true" align="center">
-				<template slot-scope="{ row }">
-					<template v-if="row.edit">
-						<el-input
-							v-model="row.UploadCaseNo"
-							size="mini"
-							style="width: 100px"
-						/>
-						<el-button type="text" @click="editCase(row)">
-							<i class="el-icon-success" />
-						</el-button>
-						<el-button type="text" @click="row.edit = false; getList()">
-							<i class="el-icon-error" />
-						</el-button>
-					</template>
-					<template v-else>
-						<span>{{ row.UploadCaseNo || "-" }}</span>
-						<el-link v-if="!row.UploadCaseNo" @click="row.edit = true" style="margin-left: 5px">
-							<i class="el-icon-edit" />
-						</el-link>
-					</template>
-				</template>
-			</el-table-column> -->
 			<el-table-column
 				v-for="(value, key) in headers"
 				:key="key"
@@ -220,11 +196,10 @@
 							size="mini"
 							:clearable="false"
 							value-format="yyyy/MM/dd"
-							@input="() => $set(list, $index, row)"
 						/>
 					</span>
 					<span v-else-if="[ 'rDeviceType' ].includes(column.property)">
-						<el-select v-model.number="row[column.property]" @input="() => $set(list, $index, row)">
+						<el-select v-model.number="row[column.property]">
 							<el-option v-for="(name, type) in options.DeviceType" :key="`${column.property}_${type}`" :label="name" :value="Number(type)" />
 						</el-select>
 					</span>
@@ -452,7 +427,7 @@ export default {
 	computed: {
 		caseList() {
 			const errArr = this.caseErrList.map(l => l.CaseNo.length > 0 ? l.CaseNo : l.UploadCaseNo );
-			return this.list.filter(row => (row.CaseNo.length > 0 && !errArr.includes(row.CaseNo)) || (row.CaseNo.length <= 0 && row.UploadCaseNo && !errArr.includes(row.UploadCaseNo)));
+			return JSON.parse(JSON.stringify(this.list)).filter(row => (row.CaseNo.length > 0 && !errArr.includes(row.CaseNo)) || (row.CaseNo.length <= 0 && row.UploadCaseNo && !errArr.includes(row.UploadCaseNo)));
 		},
 		caseErrList() {
 			let caseErrList = [];
@@ -485,7 +460,7 @@ export default {
 
 			for(const caseNo in this.csvRepeatObj) {
 				for(const uploadCaseNo of this.csvRepeatObj[caseNo]) {
-					const caseFilter = this.csvData.filter(d =>  d["案件編號"] == uploadCaseNo)[0];
+					const caseFilter = this.csvData.filter(d => d["案件編號"] == uploadCaseNo)[0];
 					let caseItem = {};
 					Object.keys(this.headers).forEach(key => caseItem[key] = caseFilter[this.headers[key].name]);
 					caseErrList.push({ ...caseItem, note: `重複案件(csv): ${caseNo}`, edit: false });
@@ -504,7 +479,7 @@ export default {
 	},
 	methods: {
 		async getList() {
-			return new Promise(resolve => {
+			return new Promise((resolve, reject) => {
 				this.loading = true;
 
 				let date = moment(this.searchDate).format("YYYY-MM-DD");
@@ -518,28 +493,22 @@ export default {
 					timeStart: date,
 					timeEnd: moment(date).add(1, "d").format("YYYY-MM-DD"),
 				}).then(response => {
-					// if (response.data.list.length == 0) {
-					// 	this.$message({
-					// 		message: "查無資料",
-					// 		type: "error",
-					// 	});
-					// } else {
-						this.list = response.data.list;
-						this.uploadedIdList = response.data.uploadedIdList;
-						this.list.forEach(l => {
-							if(l.ReportDate == undefined) l.ReportDate = l.CaseDate;
-							l.DeviceType = Number(l.DeviceType);
-							if(l.rDeviceType == undefined) l.rDeviceType = l.DeviceType;
-							l.BType = Number(l.BType);
-							l.BrokeType = Number(l.BrokeType);
-							l.lat = Number(l.lat);
-							l.lng = Number(l.lng);
-						})
-					// }
+					this.list = response.data.list;
+					this.uploadedIdList = response.data.uploadedIdList;
+					this.list.forEach(l => {
+						if(l.ReportDate == undefined) l.ReportDate = l.CaseDate;
+						l.DeviceType = Number(l.DeviceType);
+						if(l.rDeviceType == undefined) l.rDeviceType = l.DeviceType;
+						if(l.DistressSrc == '道路巡查') l.DistressSrc = '廠商';
+						l.BType = Number(l.BType);
+						l.BrokeType = Number(l.BrokeType);
+						l.lat = Number(l.lat);
+						l.lng = Number(l.lng);
+					})
 					resolve();
 					// if(this.csvFileList.length > 0) this.checkCsv();
-					this.loading = false;
-				}).catch(err => { this.loading = false;  resolve();});
+					// this.loading = false;
+				}).catch(err => { console.log(err); reject(err);});
 			});
 		},
 		caseFilterList(list) {
@@ -625,22 +594,29 @@ export default {
 				});
 				this.handleRemove(); 
 			} else {
-				await this.getList();
-				let reader = new FileReader();
-				// reader.readAsText(file.raw, "UTF-8");
-				reader.readAsArrayBuffer(file.raw);
-				reader.onload = (evt) => {
-					// 讀取CSV內容
-					// const fileString = evt.target.result;
-					const buffer = Buffer.from(evt.target.result);
-					const type = jschardet.detect(buffer);
-					// console.log(type);
-					const fileString = iconv.decode(buffer, type.encoding);
+				this.getList().then(() => {
+					let reader = new FileReader();
+					// reader.readAsText(file.raw, "UTF-8");
+					reader.readAsArrayBuffer(file.raw);
+					reader.onload = (evt) => {
+						// 讀取CSV內容
+						// const fileString = evt.target.result;
+						const buffer = Buffer.from(evt.target.result);
+						const type = jschardet.detect(buffer);
+						// console.log(type);
+						const fileString = iconv.decode(buffer, type.encoding);
 
-					//轉成array
-					this.csvData = this.csvToArray(fileString);
-					this.checkCsv();
-				}
+						//轉成array
+						this.csvData = this.csvToArray(fileString);
+						this.checkCsv();
+					}
+				}).catch(err => {
+					this.$message({
+						type: "warning",
+						message: "取得列表錯誤，請稍後再試"
+					});
+					this.handleRemove();
+				});
 			}
 		},
 		checkCsv() {
@@ -685,8 +661,10 @@ export default {
 				});
 
 				return headers.reduce((object, header, index) => {
-					if(header == "查報日期") object[header] = moment(values[index]).add(1911, 'year').format("YYYY/MM/DD");
-					else object[header] = values[index];
+					if(header == "查報日期") {
+						const dateArr = values[index].split("/");
+						object[header] = moment(`${Number(dateArr[0]) + 1911}/${dateArr[1]}/${dateArr[2]}`).format("YYYY/MM/DD");;
+					} else object[header] = values[index];
 					return object;
 				}, {});
 			});	
@@ -697,14 +675,14 @@ export default {
 			// 比對 DB 和 新工處
 			// const listCSNArr = this.list.map(l => l.CaseNo.length > 0 ?  l.CaseNo : l.UploadCaseNo);
 			const listCSNArr = this.list.map(l => l.CaseNo);
-			const csvCSNArr = this.csvData.map(d => d["來源編號"].length > 0 ? d["來源編號"] : d["案件編號"]);
+			const csvCSNArr = this.csvData.map(d => d["來源編號"].length > 0 && !d["來源編號"].includes("調") ? d["來源編號"] : d["案件編號"]);
 			this.listRepeat = this.list.reduce((list, curr, index) => {
 				if(listCSNArr.indexOf(curr.CaseNo) != index) list.push(curr.CaseNo);
 				return list;
 			}, []);
 			this.csvRepeatObj = this.csvData.reduce((obj, curr, index ) => {
 				const firstIndex = csvCSNArr.indexOf(curr["來源編號"]);
-				if(moment(curr["查報日期"]).isSame(moment(this.searchDate)) && curr["來源編號"].length != 0 && csvCSNArr.indexOf(curr["來源編號"]) != index) {
+				if(moment(curr["查報日期"]).isSame(moment(this.searchDate)) && curr["來源編號"].length != 0 && csvCSNArr.indexOf(curr["來源編號"]) != index && firstIndex != -1) {
 					if(obj[curr["來源編號"]] == undefined) obj[curr["來源編號"]] = [ this.csvData[firstIndex]["案件編號"] ];
 					obj[curr["來源編號"]].push(curr["案件編號"]);
 				}
@@ -730,7 +708,7 @@ export default {
 							if(outOfDateIndex != -1) this.caseMinus.csv.splice(outOfDateIndex, 1);
 							csvRepeat[index] = true;
 						// } else if(( data["案件編號"] == l.CaseNo || data["來源編號"] == l.CaseNo) && !Object.keys(this.csvRepeatObj).includes(data["來源編號"])) {
-						} else if((data["案件編號"] == l.CaseNo || data["來源編號"] == l.CaseNo)) {
+						} else if(data["案件編號"] == l.CaseNo || data["來源編號"] == l.CaseNo) {
 							if(data["案件編號"] == l.CaseNo && (data["來源編號"].length == 0 || data["來源編號"] == l.CaseNo)) {
 								const otherSrcIndex = this.caseMinus.list.indexOf(data["案件編號"]);
 								if(otherSrcIndex != -1) this.caseMinus.list.splice(otherSrcIndex, 1);
@@ -739,8 +717,8 @@ export default {
 							l.DistressSrc = data["查報來源"];
 							l.CaseName = data["查報地點"];
 							l.CaseType = data["損壞情形"];
-							csvRepeat[index] = true;
 							if(data["案件狀態"]) l.IsObserve = Number(data["案件狀態"] == '觀察');
+							csvRepeat[index] = true;
 						}
 					})
 				})
@@ -752,8 +730,8 @@ export default {
 			if(fileList == undefined) this.csvFileList = [];
 			else this.csvFileList = JSON.parse(JSON.stringify(fileList));
 			this.$refs.uploadFile.clearFiles();
-			this.loading = false;
 			this.clearAll();
+			this.loading = false;
 			// this.getList();
 		},
 		clearAll() {
@@ -856,7 +834,6 @@ export default {
 	.el-table .cell
 		white-space: pre-line
 		.date-picker
-			font-size: 5px
 			.el-input__inner
 				width: 120px
 				padding: 0 0 0 28px

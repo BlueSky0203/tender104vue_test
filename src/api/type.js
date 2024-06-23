@@ -44,6 +44,15 @@ export function getGuildMap(query) {
 	})
 }
 
+// 契約Map
+export function getTenderGroup(query) {
+	return request({
+		url: '/type/tenderGroup',
+		method: 'get',
+		params: query
+	})
+}
+
 // 合約Map
 export function getTenderMap(query) {
 	return request({
@@ -86,10 +95,35 @@ export function archiveTenderRound(id, data) {
 	})
 }
 
+// 進程
+export function getActionProcess(query) {
+	return request({
+		url: '/type/action',
+		method: 'get',
+		params: query
+	})
+}
+
 // 類型Map
 export function getTypeMap(query) {
 	return request({
 		url: '/type/caseTypeMap',
+		method: 'get',
+		params: query
+	})
+}
+
+export function getDTypeMap(query) {
+	return request({
+		url: '/type/distressTypeMap',
+		method: 'get',
+		params: query
+	})
+}
+
+export function getCompetentTypeMap(query) {
+	return request({
+		url: '/type/competentTypeMap',
 		method: 'get',
 		params: query
 	})

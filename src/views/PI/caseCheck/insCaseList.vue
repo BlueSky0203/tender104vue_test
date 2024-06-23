@@ -261,7 +261,7 @@
 
 <script>
 import moment from "moment";
-import { getTypeMap, getTenderRound } from "@/api/type";
+import { getTypeMap, getTenderRound, getDTypeMap } from "@/api/type";
 import { getInsCaseList, setInsCaseList, getInsCaseCount } from "@/api/PI";
 import checkPermission from '@/utils/permission';
 import Pagination from "@/components/Pagination";
@@ -291,7 +291,7 @@ export default {
 					name: "案件編號",
 					sortable: true
 				},
-				DateCreate: {
+				DateUpload: {
 					name: "成案日期",
 					sortable: false,
 				},
@@ -357,7 +357,7 @@ export default {
 			options: {
 				tenderRoundMap: {},
 				DeviceType: {},
-				DistressType: {},
+				DistressTypeFlat: {},
 				DistressLevel: {
 					1: "輕",
 					2: "中",
@@ -395,22 +395,18 @@ export default {
 				}
 			})
 			return reasonTypeArr
-		},
-		checkNum() {
-			let checkNum = { 
-				
-			};
-
-			const tenderRound = this.options.tenderRoundMap[this.listQuery.tenderRound];
-			
-
-			return checkNum;
 		}
 	},
 	created() {
 		getTypeMap().then(response => {
 			this.options.DeviceType = response.data.DeviceTypeMap;
-			this.options.DistressType = response.data.BTypeMap;
+			// this.options.DistressType = response.data.BTypeMap;
+		})
+		getDTypeMap().then(response => {
+			this.options.DistressTypeFlat = Object.values(response.data.distressTypeMap).reduce((acc, cur) => {
+				for (const key in cur) acc[key] = cur[key];
+				return acc;
+			}, {});
 		})
 		getTenderRound().then(response => {
 			this.options.tenderRoundMap = response.data.list.reduce((acc, cur) => {
@@ -532,9 +528,9 @@ export default {
 		setResult() {
 			this.loading = true;
 			this.showResultConfirm = false;
-			if(this.rowActive.PIState & 32) this.rowActive.PIStateNotes.SV = this.options.reasonType[this.rowActive.ReasonType];
+			if(this.rowActive.PIState & 32) this.rowActive.PIStateNotes.SV = this.options.reasonType[this.rowActive.ReasonType] || this.rowActive.PIStateNotes.SV;
 			else this.rowActive.PIStateNotes.SV = "";
-			if(this.rowActive.PIState & 64) this.rowActive.PIStateNotes.Organ = this.options.reasonType[this.rowActive.ReasonType];
+			if(this.rowActive.PIState & 64) this.rowActive.PIStateNotes.Organ = this.options.reasonType[this.rowActive.ReasonType] || this.rowActive.PIStateNotes.Organ;
 			else this.rowActive.PIStateNotes.Organ = "";
 
 			setInsCaseList( this.rowActive.SerialNo, {
@@ -560,7 +556,7 @@ export default {
 		formatter(row, column) {
 			if([ 'organAssign' ].includes(column.property)) return row[column.property] == 1 ? '是' : '-';
 			else if(['DeviceType', 'rDeviceType'].includes(column.property)) return this.options.DeviceType[row[column.property]];
-			else if(column.property == 'DistressType') return this.options.DistressType[row[column.property]];
+			else if(column.property == 'DistressType') return this.options.DistressTypeFlat[row[column.property]];
 			else if(column.property == 'DistressLevel') return this.options.DistressLevel[row[column.property]];
 			// else if(column.property == 'BrokeStatus') return this.options.BrokeStatus[row.DistressLevel];
 			else if(column.property.indexOf('Date') != -1) return row[column.property] ? this.formatTime(row[column.property]) : "-";
@@ -571,14 +567,10 @@ export default {
 			return moment(time).format("YYYY/MM/DD");
 		},
 		handleDownload() {
-			this.loading = true;
-			let startDate = moment(this.dateRange[0]).format("YYYY-MM-DD");
-			let endDate = moment(this.dateRange[1]).format("YYYY-MM-DD");
+			const tenderRound = this.options.tenderRoundMap[this.listQuery.tenderRound];
 
 			getInsCaseList({
-				tenderId: this.listQuery.zipCode,
-				timeStart: startDate,
-				timeEnd: moment(endDate).add(1, "d").format("YYYY-MM-DD"),
+				surveyId: tenderRound.id,
 				pageCurrent: 1,
 				pageSize: this.total
 			}).then(response => {
@@ -592,7 +584,7 @@ export default {
 					l.DateCreate = this.formatTime(l.DateCreate);
 					l.DeviceType = this.options.DeviceType[l.DeviceType];
 					l.organAssign =  l.organAssign == 1 ? "是" : "";
-					l.DistressType = this.options.DistressType[l.DistressType];
+					l.DistressType = this.options.DistressTypeFlat[l.DistressType];
 					l.DistressLevel = this.options.DistressLevel[l.DistressLevel];
 					// l.BrokeStatus = this.options.BrokeStatus[l.DistressLevel];
 					l.PCIValue = l.PCIValue == 0 ? "" : l.PCIValue;
@@ -600,7 +592,8 @@ export default {
 					l.SVCheck = (l.PIState & 2) ? "V" : (l.PIState & 32) ? "X" : "";
 					l.OrganCheck = (l.PIState & 4) ? "V" : (l.PIState & 64) ? "X" : "";
 
-					l.Note = (l.PIState & 32) ? l.PIStateNotes.SV : (l.PIState & 64) ? l.PIStateNotes.Organ : "";
+					const PIStateNotes = JSON.parse(l.PIStateNotes);
+					l.Note = (l.PIState & 32) ? PIStateNotes.SV : (l.PIState & 64) ? PIStateNotes.Organ : "";
 					return l
 				}) 
 				const data = this.formatJson(filterVal, dataList);

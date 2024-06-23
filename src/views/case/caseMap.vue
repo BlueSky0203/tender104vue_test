@@ -6,9 +6,9 @@
 			<div class="filter-container">
 				<div class="filter-item">
 					<div class="select-contract el-input el-input--medium el-input-group el-input-group--prepend">
-							<div class="el-input-group__prepend">
-								<span>合約</span>
-							</div>
+						<div class="el-input-group__prepend">
+							<span>合約</span>
+						</div>
 						<el-select v-model.number="listQuery.tenderRound" class="tender-select" popper-class="type-select tender" @input="changeTender()">
 							<el-option v-for="(val, type) in options.tenderRoundMap" :key="type" :label="val.name" :value="Number(type)" />
 						</el-select>
@@ -246,7 +246,7 @@ export default {
 				this.listQuery.filterId = this.$route.query.blockId;
 			}
 			await getDistMap().then(response => this.options.districtMap = response.data.districtMap);
-			await getTenderRound({ isMap: true }).then(response => {
+			await getTenderRound({ isMap: true, excludeShadow: true }).then(response => {
 				this.options.tenderRoundMap = response.data.list.reduce((acc, cur) => {
 					let roundId = `${cur.tenderId}${String(cur.round).padStart(3, '0')}`;
 					if(cur.zipCodeSpec != 0) roundId += `${cur.zipCodeSpec}`;
@@ -491,7 +491,6 @@ export default {
 						return { 
 							icon: { 
 								url: `/assets/icon/icon_case_${caseLevelMap[feature.getProperty("caseLevel")]}.png`,
-								anchor: new google.maps.Point(5, 5),
 								scaledSize: new google.maps.Size(25, 25),
 							},
 							zIndex: feature.getProperty("isLine") ? 1000 - feature.getProperty("length") : 1000 - feature.getProperty("area")
@@ -526,9 +525,24 @@ export default {
 		changeTender() {
 			const zipCode = this.options.tenderRoundMap[this.listQuery.tenderRound].zipCode;
 
-			this.dataLayer.district.setStyle(feature => {
+			this.dataLayer.mask.setStyle(feature => {
 				// console.log(feature);
-				const condition = zipCode == 1001 || this.options.districtMap[zipCode].district.includes(feature.getProperty("TOWNNAME"));
+				const condition = [1000].includes(zipCode);
+
+				return {
+					strokeColor: "#000000",
+					strokeWeight: 0,
+					strokeOpacity: 1,
+					fillColor: "#000000",
+					fillOpacity: condition ? 0 : 0.7,
+					zIndex: 0
+				}
+			});
+
+			this.dataLayer.district.setStyle(feature => {
+
+				// console.log(feature);
+				const condition = [999, 1000, 1001, 1003].includes(zipCode) || this.options.districtMap[zipCode].district.includes(feature.getProperty("TOWNNAME"));
 
 				return {
 					strokeColor: "#827717",
@@ -873,7 +887,7 @@ export default {
 			else return row[column.property] || "-";
 		},
 		formatTime(time) {
-			return moment(time).utc().format("YYYY-MM-DD");
+			return moment(time).format("YYYY-MM-DD");
 		}
 	},
 };

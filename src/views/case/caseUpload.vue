@@ -85,6 +85,7 @@
 
 <script>
 import moment from "moment";
+import * as jsts from 'jsts/dist/jsts.min.js';
 import { mapGetters } from "vuex";
 import { Loader } from "@googlemaps/js-api-loader";
 import { parseXml, xml2json } from '../../utils/xml2json';
@@ -549,7 +550,6 @@ export default {
 						return { 
 							icon: { 
 								url: `/assets/icon/icon_case_${caseLevelMap[feature.getProperty("caseLevel")]}.png`,
-								anchor: new google.maps.Point(5, 5),
 								scaledSize: new google.maps.Size(25, 25),
 							},
 							zIndex: feature.getProperty("isLine") ? 1000 - feature.getProperty("length") : 1000 - feature.getProperty("area")
@@ -579,16 +579,30 @@ export default {
 			this.handleRemove(); 
 			const zipCode = this.options.tenderRoundMap[this.listQuery.tenderRound].zipCode;
 
+			this.dataLayer.mask.setStyle(feature => {
+				// console.log(feature);
+				const condition = [1000].includes(zipCode);
+
+				return {
+					strokeColor: "#000000",
+					strokeWeight: 0,
+					strokeOpacity: 1,
+					fillColor: "#000000",
+					fillOpacity: condition ? 0 : 0.7,
+					zIndex: 0
+				}
+			});
+
 			this.dataLayer.district.setStyle(feature => {
 				// console.log(feature);
-				const condition = zipCode == 1001 || this.options.districtMap[zipCode].district.includes(feature.getProperty("TOWNNAME"));
+				const condition = [999, 1000, 1001, 1003].includes(zipCode)|| this.options.districtMap[zipCode].district.includes(feature.getProperty("TOWNNAME"));
 
 				return {
 					strokeColor: "#827717",
 					strokeWeight: 3,
 					strokeOpacity: 0.2,
 					fillColor: "#000000",
-					fillOpacity: condition ? 0 : 0.7,
+					fillOpacity: condition ? 0.4 : 0.7,
 					zIndex: 0
 				}
 			});
